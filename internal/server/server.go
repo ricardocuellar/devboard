@@ -1,3 +1,4 @@
+// Package server creates and start server
 package server
 
 import (
@@ -5,12 +6,13 @@ import (
 	"time"
 )
 
+// Server struct
 type Server struct {
 	httpServer *http.Server
 	mux        *http.ServeMux
 }
 
-// Crea un nuevo server
+// New creates a new server
 func New(addr string) *Server {
 	mux := http.NewServeMux() //Enrutador HTTP
 
@@ -30,7 +32,17 @@ func New(addr string) *Server {
 	}
 }
 
-// Inicia el servidor
+// Start server
 func (server *Server) Start() error {
 	return server.httpServer.ListenAndServe()
+}
+
+// RegisterRoutes method
+func (server *Server) RegisterRoutes(pattern string, handler http.Handler) {
+	server.mux.Handle(pattern, handler)
+}
+
+// ServeHTTP server
+func (server *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	server.mux.ServeHTTP(writer, request)
 }
