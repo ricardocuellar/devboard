@@ -1,3 +1,4 @@
+// Package logger with slog
 package logger
 
 import (
@@ -6,12 +7,14 @@ import (
 	"os"
 )
 
+// Config struct
 type Config struct {
 	Level  slog.Level
 	JSON   bool
 	Output io.Writer
 }
 
+// DefaultConfig function
 func DefaultConfig() Config {
 	return Config{
 		Level:  slog.LevelDebug,
@@ -20,6 +23,7 @@ func DefaultConfig() Config {
 	}
 }
 
+// ProductionConfig function
 func ProductionConfig() Config {
 	return Config{
 		Level:  slog.LevelInfo,
@@ -28,6 +32,7 @@ func ProductionConfig() Config {
 	}
 }
 
+// New Config
 func New(config Config) *slog.Logger {
 	out := config.Output
 

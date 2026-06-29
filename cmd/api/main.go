@@ -2,8 +2,7 @@
 package main
 
 import (
-	"log"
-	"log/slog"
+	"os"
 
 	"github.com/ricardocuellar/devboard/internal/handler"
 	"github.com/ricardocuellar/devboard/internal/logger"
@@ -16,10 +15,10 @@ func main() {
 	// logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 	// 	Level: slog.LevelInfo,
 	// }))
-	logger := logger.New(logger.ProductionConfig())
+	logger := logger.New(logger.DefaultConfig())
 
 	// Aqui arranca el servidor
-	srv := server.New(":8080")
+	srv := server.New(":8080", logger)
 
 	srv.Use(middlewares.Recovery(logger))
 	srv.Use(middlewares.Logger(logger))
@@ -34,11 +33,10 @@ func main() {
 	// 	panic("error provocado para probar Recovery")
 	// }))
 
-	// log.Println("Servidor iniciando en :8080")
-	logger.Info("servidor iniciando", slog.String("addr", ":8080"))
-
 	if err := srv.Start(); err != nil {
-		log.Fatalf("error al iniciar el servidor %v", err)
+		logger.Error("error fatal", "error", err)
+		os.Exit(1)
+		// log.Fatalf("error al iniciar el servidor %v", err)
 	}
 
 }

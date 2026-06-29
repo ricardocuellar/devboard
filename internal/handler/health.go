@@ -20,7 +20,7 @@ type healthResponse struct {
 	Version string `json:"version"`
 }
 
-func (handle *HealthHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (handle *HealthHandler) ServeHTTP(writer http.ResponseWriter, _ *http.Request) {
 	resp := healthResponse{
 		Status:  "ok",
 		Version: "1.0.0",

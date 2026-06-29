@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 )
 
+// Recovery middleware
 func Recovery(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
