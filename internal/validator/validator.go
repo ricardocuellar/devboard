@@ -1,3 +1,4 @@
+// Package validator v10
 package validator
 
 import (
@@ -7,21 +8,25 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// Validator que empaqueta el validator de terceros
 type Validator struct {
 	validate *validator.Validate
 }
 
+// New Validator constructor
 func New() *Validator {
 	return &Validator{
 		validate: validator.New(validator.WithRequiredStructEnabled()),
 	}
 }
 
+// ValidationError struct para errores de validación
 type ValidationError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
 }
 
+// Validate valida un struct según sus tags y retorna errores legibles traducidos
 func (v *Validator) Validate(s interface{}) []ValidationError {
 	err := v.validate.Struct(s)
 	if err == nil {
@@ -29,7 +34,14 @@ func (v *Validator) Validate(s interface{}) []ValidationError {
 	}
 
 	var errors []ValidationError
-	for _, e := range err.(validator.ValidationErrors) {
+
+	validationErrors, ok := err.(validator.ValidationErrors)
+
+	if !ok {
+		return nil
+	}
+
+	for _, e := range validationErrors {
 		errors = append(errors, ValidationError{
 			Field:   strings.ToLower(e.Field()),
 			Message: translateTag(e),
