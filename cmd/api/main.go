@@ -4,12 +4,20 @@ package main
 import (
 	"os"
 
+	_ "github.com/ricardocuellar/devboard/docs"
 	"github.com/ricardocuellar/devboard/internal/handler"
 	"github.com/ricardocuellar/devboard/internal/logger"
 	"github.com/ricardocuellar/devboard/internal/middlewares"
 	"github.com/ricardocuellar/devboard/internal/server"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// @title Devboard API
+// @version 1.0
+// @description API REST para gestión de proyectos
+// @contact.name Soporte Devboard Ricardo
+// @host  localhost:8080
+// @BasePath /api/v1
 func main() {
 
 	// logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
@@ -25,6 +33,7 @@ func main() {
 
 	healthHander := handler.NewHealthHandler()
 
+	srv.RegisterRoutes("GET /docs/", httpSwagger.WrapHandler)
 	srv.RegisterRoutes("GET /health", healthHander)
 	srv.RegisterRoutes("GET /ready", healthHander)
 

@@ -54,3 +54,7 @@ docker-down:
 ## docker-logs: ver logs de todos los servicios
 docker-logs:
 	docker compose logs -f
+
+## docs: generar documentación OpenAPI con swaggo
+docs: 
+	swag init -g cmd/api/main.go -o docs
