@@ -16,13 +16,14 @@ type errorResponse struct {
 	Details []validator.ValidationError `json:"details,omitempty"`
 }
 
+// ProblemDetails struct generalizado usando rfc 7807
 type ProblemDetails struct {
 	Type     string                      `json:"type"`
 	Title    string                      `json:"title"`
 	Status   int                         `json:"status"`
 	Detail   string                      `json:"detail"`
 	Instance string                      `json:"instance"`
-	Errors   []validator.ValidationError `json:"errors,omitempty`
+	Errors   []validator.ValidationError `json:"errors,omitempty"`
 }
 
 const problemBaseURL = "https://ricardocuellar.dev/errors"
@@ -70,24 +71,28 @@ func RespondError(writer http.ResponseWriter, request *http.Request, logger *slo
 
 	writer.Header().Set("Content-Type", "application/problem+json")
 	writer.WriteHeader(problem.Status)
-	json.NewEncoder(writer).Encode(problem)
+
+	if encodeErr := json.NewEncoder(writer).Encode(problem); encodeErr != nil {
+		logger.Error("error al escribir problem details",
+			slog.String("error", encodeErr.Error()))
+	}
 }
 
 // RespondValidationError responde errores de validación
-func RespondValidationError(writer http.ResponseWriter, errs []validator.ValidationError) {
-	respondJSON(writer, http.StatusBadRequest, errorResponse{
+func RespondValidationError(writer http.ResponseWriter, errs []validator.ValidationError) error {
+	return respondJSON(writer, http.StatusBadRequest, errorResponse{
 		Error:   "datos de entrada inválidos",
 		Details: errs,
 	})
 }
 
 // ResponseJSON envia una respuesta exitosa en formato JSON
-func ResponseJSON(writer http.ResponseWriter, status int, data any) {
-	respondJSON(writer, status, data)
+func ResponseJSON(writer http.ResponseWriter, status int, data any) error {
+	return respondJSON(writer, status, data)
 }
 
-func respondJSON(writer http.ResponseWriter, status int, data any) {
+func respondJSON(writer http.ResponseWriter, status int, data any) error {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
-	json.NewEncoder(writer).Encode(data)
+	return json.NewEncoder(writer).Encode(data)
 }
