@@ -3,6 +3,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	_ "github.com/ricardocuellar/devboard/docs"
 	"github.com/ricardocuellar/devboard/internal/handler"
@@ -26,7 +27,10 @@ func main() {
 	logger := logger.New(logger.DefaultConfig())
 
 	// Aqui arranca el servidor
-	srv := server.New(":8080", logger)
+	srv := server.New(":8080",
+		server.WithLogger(logger),
+		server.WithReadTimeout(15*time.Second),
+	)
 
 	srv.Use(middlewares.Recovery(logger))
 	srv.Use(middlewares.Logger(logger))

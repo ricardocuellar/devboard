@@ -19,23 +19,29 @@ type Server struct {
 }
 
 // New creates a new server
-func New(addr string, logger *slog.Logger) *Server {
+func New(addr string, opts ...Option) *Server {
+
+	cfg := defaultConfig()
+
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	mux := http.NewServeMux() //Enrutador HTTP
 
 	httpServer := &http.Server{
-		Addr:    addr,
-		Handler: mux,
-
-		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      30 * time.Second,
-		IdleTimeout:       60 * time.Second,
-		ReadHeaderTimeout: 5 * time.Second,
+		Addr:              addr,
+		Handler:           mux,
+		ReadTimeout:       cfg.readTimeout,
+		WriteTimeout:      cfg.writeTimeout,
+		IdleTimeout:       cfg.idleTimeout,
+		ReadHeaderTimeout: cfg.readHeaderTimeout,
 	}
 
 	return &Server{
 		httpServer: httpServer,
 		mux:        mux,
-		logger:     logger,
+		logger:     cfg.logger,
 	}
 }
 
