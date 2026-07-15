@@ -1,10 +1,59 @@
 basePath: /api/v1
 definitions:
+  handler.ProblemDetails:
+    properties:
+      detail:
+        type: string
+      errors:
+        items:
+          $ref: '#/definitions/validator.ValidationError'
+        type: array
+      instance:
+        type: string
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: string
+    type: object
+  handler.createUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
   handler.healthResponse:
     properties:
       status:
         type: string
       version:
+        type: string
+    type: object
+  handler.userResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  validator.ValidationError:
+    properties:
+      field:
+        type: string
+      message:
         type: string
     type: object
 host: localhost:8080
@@ -28,4 +77,53 @@ paths:
       summary: Health check
       tags:
       - system
+  /users:
+    post:
+      consumes:
+      - application/json
+      description: Registra un nuevo usuario en el sistema
+      parameters:
+      - description: Datos del usuario
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.createUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.userResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ProblemDetails'
+      summary: Crear usuario
+      tags:
+      - users
+  /users/{id}:
+    get:
+      description: Obtiene un usuario por su ID
+      parameters:
+      - description: ID del usuario
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.userResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ProblemDetails'
+      summary: Obtener usuario
+      tags:
+      - users
 swagger: "2.0"

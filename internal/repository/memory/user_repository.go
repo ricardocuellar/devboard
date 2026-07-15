@@ -1,3 +1,4 @@
+// Package memory user_repository
 package memory
 
 import (
