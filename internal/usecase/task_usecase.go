@@ -48,3 +48,21 @@ func (uc *TaskUseCase) CreateTask(ctx context.Context, projectID, title, created
 func (uc *TaskUseCase) ListProjectTasks(ctx context.Context, projectID string) ([]*domain.Task, error) {
 	return uc.queries.ListByProject(ctx, projectID)
 }
+
+// AssignTask método para asignar tarea
+func (uc *TaskUseCase) AssignTask(ctx context.Context, taskID, userID string) (*domain.Task, error) {
+	task, err := uc.queries.GetByID(ctx, taskID)
+	if err != nil {
+		return nil, fmt.Errorf("obteniendo tarea %s: %w", taskID, err)
+	}
+
+	if err := task.AssignTo(userID); err != nil {
+		return nil, err
+	}
+
+	if err := uc.commands.Update(ctx, task); err != nil {
+		return nil, fmt.Errorf("actualizando tarea: %w", err)
+	}
+
+	return task, nil
+}
