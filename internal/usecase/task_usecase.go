@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ricardocuellar/devboard/internal/domain"
 )
@@ -30,4 +31,20 @@ func NewTaskUseCase(commands TaskCommandRepository, queries TaskQueryRepository)
 		commands: commands,
 		queries:  queries,
 	}
+}
+
+// CreateTask método para crear tarea
+func (uc *TaskUseCase) CreateTask(ctx context.Context, projectID, title, createdBy string) (*domain.Task, error) {
+	task := domain.NewTask(projectID, title, createdBy)
+
+	if err := uc.commands.Create(ctx, task); err != nil {
+		return nil, fmt.Errorf("creando tarea: %w", err)
+	}
+
+	return task, nil
+}
+
+// ListProjectTasks método para crear tarea
+func (uc *TaskUseCase) ListProjectTasks(ctx context.Context, projectID string) ([]*domain.Task, error) {
+	return uc.queries.ListByProject(ctx, projectID)
 }
