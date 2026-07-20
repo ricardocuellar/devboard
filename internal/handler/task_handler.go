@@ -149,7 +149,42 @@ func (h *TaskHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ListByProject
+// ListByProject método para obtener tareas por medio de un ProjectID
+//
+// @Summary	Listar tareas del proyecto
+// @Description Retorna todas las tareas de un proyecto
+// @Tags  tasks
+// @Produce json
+// @Param id path	string	true "ID del proyecto"
+// @Success 200 {object} PaginatedResponse[taskResponse]
+// @Failure 404 {object} ProblemDetails
+// @Router /projects/{id}/tasks [get]
+func (h *TaskHandler) ListByProject(w http.ResponseWriter, r *http.Request) {
+	projectID := r.PathValue("id")
+	tasks, err := h.usercase.ListProjectTasks(r.Context(), projectID)
+
+	if err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	response := make([]taskResponse, len(tasks))
+	for i, t := range tasks {
+		response[i] = toTaskResponse(t)
+	}
+
+	if err := RespondJSON(w, http.StatusOK, PaginatedResponse[taskResponse]{
+		Data:    response,
+		HasMore: false,
+	}); err != nil {
+		h.logger.ErrorContext(r.Context(),
+			"error al obtener respuesta JSON para obtener tareas",
+			"error", err,
+			"method", r.Method,
+			"path", r.URL.Path)
+	}
+
+}
 
 // Assign
 

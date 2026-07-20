@@ -37,6 +37,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/projects/{id}/tasks": {
+            "get": {
+                "description": "Retorna todas las tareas de un proyecto",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Listar tareas del proyecto",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del proyecto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.PaginatedResponse-handler_taskResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ProblemDetails"
+                        }
+                    }
+                }
+            }
+        },
         "/tasks": {
             "post": {
                 "description": "Registra una nueva tarea en el sistema",
@@ -201,6 +236,23 @@ const docTemplate = `{
                 "TaskStatusInProgress",
                 "TaskStatusDone"
             ]
+        },
+        "handler.PaginatedResponse-handler_taskResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.taskResponse"
+                    }
+                },
+                "has_more": {
+                    "type": "boolean"
+                },
+                "next_cursor": {
+                    "type": "string"
+                }
+            }
         },
         "handler.ProblemDetails": {
             "type": "object",

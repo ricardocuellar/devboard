@@ -10,6 +10,17 @@ definitions:
     - TaskStatusTodo
     - TaskStatusInProgress
     - TaskStatusDone
+  handler.PaginatedResponse-handler_taskResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/handler.taskResponse'
+        type: array
+      has_more:
+        type: boolean
+      next_cursor:
+        type: string
+    type: object
   handler.ProblemDetails:
     properties:
       detail:
@@ -127,6 +138,29 @@ paths:
       summary: Health check
       tags:
       - system
+  /projects/{id}/tasks:
+    get:
+      description: Retorna todas las tareas de un proyecto
+      parameters:
+      - description: ID del proyecto
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.PaginatedResponse-handler_taskResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ProblemDetails'
+      summary: Listar tareas del proyecto
+      tags:
+      - tasks
   /tasks:
     post:
       consumes:
