@@ -82,3 +82,22 @@ func (uc *TaskUseCase) GetTask(ctx context.Context, id string) (*domain.Task, er
 
 	return task, nil
 }
+
+// UpdateTaskStatus mueve una tarea a un nuevo estado del tablero
+func (uc *TaskUseCase) UpdateTaskStatus(ctx context.Context, taskID string, newStatus domain.TaskStatus) (*domain.Task, error) {
+	task, err := uc.queries.GetByID(ctx, taskID)
+
+	if err != nil {
+		return nil, fmt.Errorf("obteniendo tarea %s: %w", taskID, err)
+	}
+
+	if err := task.MoveToStatus(newStatus); err != nil {
+		return nil, err
+	}
+
+	if err := uc.commands.Update(ctx, task); err != nil {
+		return nil, fmt.Errorf("actualizando estado de tarea: %w", err)
+	}
+
+	return task, nil
+}
