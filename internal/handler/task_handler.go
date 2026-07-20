@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/ricardocuellar/devboard/internal/domain"
 	"github.com/ricardocuellar/devboard/internal/usecase"
@@ -36,6 +37,34 @@ type createTaskRequest struct {
 type createTaskResponse struct {
 	ProjectID string `json:"project_id"`
 	Title     string `json:"title"`
+}
+
+// taskResponse estructura de respuesta
+type taskResponse struct {
+	ID          string            `json:"id"`
+	ProjectID   string            `json:"project_id"`
+	Title       string            `json:"title"`
+	Description string            `json:"description,omitempty"`
+	Status      domain.TaskStatus `json:"status"`
+	AssigneeID  *string           `json:"assignee_id,omitempty"`
+	CreatedBy   string            `json:"created_by"`
+	CreatedAt   time.Time         `json:"created_at"`
+	UpdatedAt   time.Time         `json:"updated_at"`
+}
+
+// toTaskResponse convierte entidad de dominio a DTO de respuesta
+func toTaskResponse(t *domain.Task) taskResponse {
+	return taskResponse{
+		ID:          t.ID,
+		ProjectID:   t.ProjectID,
+		Title:       t.Title,
+		Description: t.Description,
+		Status:      t.Status,
+		AssigneeID:  t.AssigneeID,
+		CreatedBy:   t.CreatedBy,
+		CreatedAt:   t.CreatedAt,
+		UpdatedAt:   t.UpdatedAt,
+	}
 }
 
 //
@@ -92,7 +121,33 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Get
+// Get método para obtener tarea por ID
+//
+// @Summary	Obtener tarea por ID
+// @Description Obtiene una tarea por su ID
+// @Tags  tasks
+// @Produce json
+// @Param id path	string	true "ID de la tarea"
+// @Success 200 {object} taskResponse
+// @Failure 404 {object} ProblemDetails
+// @Router /tasks/{id} [get]
+func (h *TaskHandler) Get(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	task, err := h.usercase.GetTask(r.Context(), id)
+
+	if err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	if err := RespondJSON(w, http.StatusOK, toTaskResponse(task)); err != nil {
+		h.logger.ErrorContext(r.Context(),
+			"error al escribir respuesta JSON",
+			"error", err,
+			"method", r.Method,
+			"path", r.URL.Path)
+	}
+}
 
 // ListByProject
 

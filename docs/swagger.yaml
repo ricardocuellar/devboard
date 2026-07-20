@@ -1,5 +1,15 @@
 basePath: /api/v1
 definitions:
+  domain.TaskStatus:
+    enum:
+    - todo
+    - in_progress
+    - done
+    type: string
+    x-enum-varnames:
+    - TaskStatusTodo
+    - TaskStatusInProgress
+    - TaskStatusDone
   handler.ProblemDetails:
     properties:
       detail:
@@ -22,6 +32,8 @@ definitions:
       project_id:
         type: string
       title:
+        maxLength: 200
+        minLength: 3
         type: string
     required:
     - project_id
@@ -55,6 +67,27 @@ definitions:
       status:
         type: string
       version:
+        type: string
+    type: object
+  handler.taskResponse:
+    properties:
+      assignee_id:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      project_id:
+        type: string
+      status:
+        $ref: '#/definitions/domain.TaskStatus'
+      title:
+        type: string
+      updated_at:
         type: string
     type: object
   handler.userResponse:
@@ -118,6 +151,29 @@ paths:
           schema:
             $ref: '#/definitions/handler.ProblemDetails'
       summary: Crear tarea
+      tags:
+      - tasks
+  /tasks/{id}:
+    get:
+      description: Obtiene una tarea por su ID
+      parameters:
+      - description: ID de la tarea
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.taskResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ProblemDetails'
+      summary: Obtener tarea por ID
       tags:
       - tasks
   /users:

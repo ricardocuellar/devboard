@@ -66,3 +66,13 @@ func (uc *TaskUseCase) AssignTask(ctx context.Context, taskID, userID string) (*
 
 	return task, nil
 }
+
+// GetTask obtiene una tarea por ID
+func (uc *TaskUseCase) GetTask(ctx context.Context, id string) (*domain.Task, error) {
+	task, err := uc.queries.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("obteniendo tarea %s: %w", id, err)
+	}
+
+	return task, nil
+}
