@@ -34,9 +34,11 @@ func main() {
 
 	// Infrastructure: adapters
 	userRepo := memory.NewUserRepository()
+	taskRepo := memory.NewTaskRepository()
 
 	// Use cases: lógica del negocio
 	userUC := usecase.NewUserUseCase(userRepo)
+	taskUC := usecase.NewTaskUseCase(taskRepo, taskRepo)
 
 	// Validación compartida
 	validate := validator.New()
@@ -44,6 +46,7 @@ func main() {
 	// 4. Handlers
 	healthHandler := handler.NewHealthHandler()
 	userHandler := handler.NewUserHandler(userUC, validate, log)
+	taskHandler := handler.NewTaskHandler(taskUC, validate, log)
 
 	// notifier := notification.NewLogNotifier(log)
 	// _ = notifier
@@ -60,6 +63,12 @@ func main() {
 	srv.RegisterRoutes("GET /health", healthHandler)
 	srv.RegisterRoutes("POST /api/v1/users", http.HandlerFunc(userHandler.Create))
 	srv.RegisterRoutes("GET /api/v1/users/{id}", http.HandlerFunc(userHandler.Get))
+	srv.RegisterRoutes("POST /api/v1/tasks", http.HandlerFunc(taskHandler.Create))
+
+	// GET /api/v1/tasks/{id}
+	// GET /api/v1/projects/{id}/tasks
+	// PUT /api/v1/tasks/{id}/assign
+	// PUT /api/v1/tasks/{id}/status
 
 	// 7. Middleware chain
 	srv.UseChain(

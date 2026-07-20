@@ -17,6 +17,23 @@ definitions:
       type:
         type: string
     type: object
+  handler.createTaskRequest:
+    properties:
+      project_id:
+        type: string
+      title:
+        type: string
+    required:
+    - project_id
+    - title
+    type: object
+  handler.createTaskResponse:
+    properties:
+      project_id:
+        type: string
+      title:
+        type: string
+    type: object
   handler.createUserRequest:
     properties:
       email:
@@ -77,6 +94,32 @@ paths:
       summary: Health check
       tags:
       - system
+  /tasks:
+    post:
+      consumes:
+      - application/json
+      description: Registra una nueva tarea en el sistema
+      parameters:
+      - description: Datos de la tarea
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.createTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.createTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ProblemDetails'
+      summary: Crear tarea
+      tags:
+      - tasks
   /users:
     post:
       consumes:
