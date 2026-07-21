@@ -47,6 +47,9 @@ definitions:
     type: object
   handler.createTaskRequest:
     properties:
+      description:
+        maxLength: 2000
+        type: string
       project_id:
         type: string
       title:
@@ -56,13 +59,6 @@ definitions:
     required:
     - project_id
     - title
-    type: object
-  handler.createTaskResponse:
-    properties:
-      project_id:
-        type: string
-      title:
-        type: string
     type: object
   handler.createUserRequest:
     properties:
@@ -193,7 +189,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/handler.createTaskResponse'
+            $ref: '#/definitions/handler.taskResponse'
         "400":
           description: Bad Request
           schema:

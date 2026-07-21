@@ -37,15 +37,16 @@ func NewTaskHandler(uc *usecase.TaskUseCase, v *validator.Validator, logger *slo
 
 // createTaskRequest estructura
 type createTaskRequest struct {
-	ProjectID string `json:"project_id" validate:"required"`
-	Title     string `json:"title" validate:"required,min=3,max=200"`
+	ProjectID   string `json:"project_id" validate:"required"`
+	Title       string `json:"title" validate:"required,min=3,max=200"`
+	Description string `json:"description" validate:"max=2000"`
 }
 
-// createTaskResponse estructura
-type createTaskResponse struct {
-	ProjectID string `json:"project_id"`
-	Title     string `json:"title"`
-}
+// // createTaskResponse estructura
+// type createTaskResponse struct {
+// 	ProjectID string `json:"project_id"`
+// 	Title     string `json:"title"`
+// }
 
 // taskResponse estructura de respuesta
 type taskResponse struct {
@@ -85,7 +86,7 @@ func toTaskResponse(t *domain.Task) taskResponse {
 // @Accept json
 // @Produce json
 // @Param request body	createTaskRequest	true "Datos de la tarea"
-// @Success 201 {object} createTaskResponse
+// @Success 201 {object} taskResponse
 // @Failure 400 {object} ProblemDetails
 // @Router /tasks [post]
 func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -109,16 +110,13 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := h.usercase.CreateTask(r.Context(), req.ProjectID, req.Title, "system")
+	task, err := h.usercase.CreateTask(r.Context(), req.ProjectID, req.Title, req.Description, "system")
 	if err != nil {
 		RespondError(w, r, h.logger, err)
 		return
 	}
 
-	if err := RespondJSON(w, http.StatusCreated, createTaskResponse{
-		ProjectID: task.ProjectID,
-		Title:     task.Title,
-	}); err != nil {
+	if err := RespondJSON(w, http.StatusCreated, toTaskResponse(task)); err != nil {
 		h.logger.ErrorContext(
 			r.Context(),
 			"error al escribir respuesta JSON de tarea",

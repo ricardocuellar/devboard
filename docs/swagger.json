@@ -94,7 +94,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/handler.createTaskResponse"
+                            "$ref": "#/definitions/handler.taskResponse"
                         }
                     },
                     "400": {
@@ -386,6 +386,10 @@
                 "title"
             ],
             "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
                 "project_id": {
                     "type": "string"
                 },
@@ -393,17 +397,6 @@
                     "type": "string",
                     "maxLength": 200,
                     "minLength": 3
-                }
-            }
-        },
-        "handler.createTaskResponse": {
-            "type": "object",
-            "properties": {
-                "project_id": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
                 }
             }
         },

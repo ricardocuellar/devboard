@@ -100,7 +100,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/handler.createTaskResponse"
+                            "$ref": "#/definitions/handler.taskResponse"
                         }
                     },
                     "400": {
@@ -392,6 +392,10 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
                 "project_id": {
                     "type": "string"
                 },
@@ -399,17 +403,6 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 200,
                     "minLength": 3
-                }
-            }
-        },
-        "handler.createTaskResponse": {
-            "type": "object",
-            "properties": {
-                "project_id": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
                 }
             }
         },
