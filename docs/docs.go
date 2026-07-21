@@ -147,6 +147,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/tasks/{id}/assign": {
+            "put": {
+                "description": "Asigna una tarea a un miembro del equipo",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Asignar tarea",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de la tarea",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ID del asignado",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.assignTaskRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.taskResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ProblemDetails"
+                        }
+                    }
+                }
+            }
+        },
         "/tasks/{id}/status": {
             "put": {
                 "description": "Mueve una tarea a un nuevo estado del tablero",
@@ -323,6 +370,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.assignTaskRequest": {
+            "type": "object",
+            "required": [
+                "assignee_id"
+            ],
+            "properties": {
+                "assignee_id": {
                     "type": "string"
                 }
             }

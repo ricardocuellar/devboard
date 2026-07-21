@@ -22,6 +22,10 @@ type updateStatusRequest struct {
 	Status domain.TaskStatus `json:"status" validate:"required"`
 }
 
+type assignTaskRequest struct {
+	AssigneeID string `json:"assignee_id" validate:"required,uuid4"`
+}
+
 // NewTaskHandler constructor
 func NewTaskHandler(uc *usecase.TaskUseCase, v *validator.Validator, logger *slog.Logger) *TaskHandler {
 	return &TaskHandler{
@@ -190,7 +194,54 @@ func (h *TaskHandler) ListByProject(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Assign
+// Assign asigna una tarea
+//
+// @Summary	Asignar tarea
+// @Description Asigna una tarea a un miembro del equipo
+// @Tags  tasks
+// @Accept json
+// @Produce json
+// @Param id 	path	string		true 	"ID de la tarea"
+// @Param request body	assignTaskRequest	true "ID del asignado"
+// @Success 200 {object} taskResponse
+// @Failure 400 {object} ProblemDetails
+// @Router /tasks/{id}/assign [put]
+func (h *TaskHandler) Assign(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	var req assignTaskRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		RespondError(w, r, h.logger, domain.ErrInvalidInput)
+		return
+	}
+
+	if errs := h.validator.Validate(req); errs != nil {
+		if err := RespondValidationError(w, errs); err != nil {
+			h.logger.ErrorContext(r.Context(),
+				"error al escribir respuesta de validación",
+				"error", err,
+				"method", r.Method,
+				"path", r.URL.Path)
+		}
+		return
+	}
+
+	task, err := h.usercase.AssignTask(r.Context(), id, req.AssigneeID)
+
+	if err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	if err := RespondJSON(w, http.StatusOK, toTaskResponse(task)); err != nil {
+		h.logger.ErrorContext(r.Context(),
+			"error al obtener respuesta JSON al asignar tarea",
+			"error", err,
+			"method", r.Method,
+			"path", r.URL.Path)
+	}
+}
 
 // UpdateStatus Actualizar estado de tarea
 //
