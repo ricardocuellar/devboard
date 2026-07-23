@@ -30,3 +30,9 @@ formatters:
 
 run:
   timeout: 5m
+
+issues:
+  exclude-rules:
+    - path: "internal/repository/postgres/generated"
+      linters:
+        - all
