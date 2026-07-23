@@ -1,0 +1,14 @@
+server:
+  addr: ":8080"
+  read_timeout: 10s
+  write_timeout: 30s
+
+database:
+  url: "postgresql://postgres:password@localhost:5432/devboard?sslmode=disable"
+  max_conns: 25 # número de núcleos * 2 o 4.
+  min_conns: 5 
+  max_conn_lifetime: 1h
+  max_conn_idle_time: 30m
+
+app:
+  env: "development"
