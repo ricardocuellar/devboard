@@ -68,7 +68,7 @@ func (r *TaskRepository) Update(ctx context.Context, task *domain.Task) error {
 	var assigneeID pgtype.UUID
 
 	if task.AssigneeID != nil {
-		if err := assigneeID.Scan(task.AssigneeID); err != nil {
+		if err := assigneeID.Scan(*task.AssigneeID); err != nil {
 			return fmt.Errorf("assignee_id inválido: %w", domain.ErrInvalidInput)
 		}
 	}
@@ -90,4 +90,68 @@ func (r *TaskRepository) Update(ctx context.Context, task *domain.Task) error {
 
 	return nil
 
+}
+
+// GetByID obtiene una tarea por ID.
+func (r *TaskRepository) GetByID(ctx context.Context, id string) (*domain.Task, error) {
+	var pgID pgtype.UUID
+
+	if err := pgID.Scan(id); err != nil {
+		return nil, fmt.Errorf("id inválido %s: %w", id, domain.ErrNotFound)
+	}
+
+	result, err := r.queries.GetTaskByID(ctx, pgID)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("tarea %s: %w", id, domain.ErrNotFound)
+		}
+		return nil, fmt.Errorf("consultando tarea %s: %w", id, err)
+	}
+
+	return toDomainTask(result), nil
+}
+
+// ListByProject lista las tareas de un proyecto.
+func (r *TaskRepository) ListByProject(ctx context.Context, projectID string) ([]*domain.Task, error) {
+	var pgProjectID pgtype.UUID
+
+	if err := pgProjectID.Scan(projectID); err != nil {
+		return nil, fmt.Errorf("project_id inválido: %w", domain.ErrNotFound)
+	}
+
+	results, err := r.queries.ListTasksByProject(ctx, pgProjectID)
+
+	if err != nil {
+		return nil, fmt.Errorf("listanto tareas del proyecto %s: %w", projectID, err)
+	}
+
+	tasks := make([]*domain.Task, len(results))
+
+	for i, result := range results {
+		tasks[i] = toDomainTask(result)
+	}
+
+	return tasks, nil
+}
+
+// toDomainTask convierte el modelo de sqlc a modelo de dominio
+func toDomainTask(t generated.Task) *domain.Task {
+	task := &domain.Task{
+		ID:          t.ID.String(),
+		ProjectID:   t.ProjectID.String(),
+		Title:       t.Title,
+		Description: t.Description,
+		Status:      domain.TaskStatus(t.Status),
+		CreatedBy:   t.CreatedBy.String(),
+		CreatedAt:   t.CreatedAt.Time,
+		UpdatedAt:   t.UpdatedAt.Time,
+	}
+
+	if t.AssigneeID.Valid {
+		id := t.AssigneeID.String()
+		task.AssigneeID = &id
+	}
+
+	return task
 }
