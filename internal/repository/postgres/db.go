@@ -1,3 +1,4 @@
+// Package postgres configuration
 package postgres
 
 import (
