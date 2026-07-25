@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ricardocuellar/devboard/internal/domain"
@@ -51,6 +53,40 @@ func (r *TaskRepository) Create(ctx context.Context, task *domain.Task) error {
 	task.ID = result.ID.String()
 	task.CreatedAt = result.CreatedAt.Time
 	task.UpdatedAt = result.UpdatedAt.Time
+
+	return nil
+
+}
+
+// Update actualiza una tarea existente
+func (r *TaskRepository) Update(ctx context.Context, task *domain.Task) error {
+	var id pgtype.UUID
+	if err := id.Scan(task.ID); err != nil {
+		return fmt.Errorf("id inválido: %w", domain.ErrInvalidInput)
+	}
+
+	var assigneeID pgtype.UUID
+
+	if task.AssigneeID != nil {
+		if err := assigneeID.Scan(task.AssigneeID); err != nil {
+			return fmt.Errorf("assignee_id inválido: %w", domain.ErrInvalidInput)
+		}
+	}
+
+	_, err := r.queries.UpdateTask(ctx, generated.UpdateTaskParams{
+		ID:          id,
+		Title:       task.Title,
+		Description: task.Description,
+		Status:      string(task.Status),
+		AssigneeID:  assigneeID,
+	})
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("tarea %s: %w", task.ID, domain.ErrNotFound)
+		}
+		return fmt.Errorf("actualizando tarea %s: %w", task.ID, err)
+	}
 
 	return nil
 
