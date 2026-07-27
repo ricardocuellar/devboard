@@ -9,6 +9,7 @@ import (
 	"time"
 
 	_ "github.com/ricardocuellar/devboard/docs"
+	"github.com/ricardocuellar/devboard/internal/cache"
 	"github.com/ricardocuellar/devboard/internal/handler"
 	"github.com/ricardocuellar/devboard/internal/logger"
 	"github.com/ricardocuellar/devboard/internal/middlewares"
@@ -32,6 +33,7 @@ func main() {
 	log := setupLogger()
 
 	dbURL := os.Getenv("DATABASE_URL")
+	redisAddr := os.Getenv("REDIS_ADDR")
 
 	// Crear pool de conexiones
 	pool, err := pgrepo.NewPool(context.Background(), pgrepo.Config{
@@ -50,6 +52,27 @@ func main() {
 	defer pool.Close()
 
 	log.Info("conexión a base de datos establecida")
+
+	redisClient, err := cache.NewClient(context.Background(), cache.Config{
+		Addr:    redisAddr,
+		Timeout: 5 * time.Second,
+	})
+
+	if err != nil {
+		log.Error("no se pudo conectar a Redis", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Error(
+				"no se pudo cerrar la conexión a Redis",
+				slog.Any("error", err),
+			)
+		}
+	}()
+
+	log.Info("conexión a Redis establecida")
 
 	// 3. Dependencies compartidas
 
