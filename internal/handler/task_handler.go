@@ -110,7 +110,8 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := h.usercase.CreateTask(r.Context(), req.ProjectID, req.Title, req.Description, "system")
+	//UUID temporal generado en clase
+	task, err := h.usercase.CreateTask(r.Context(), req.ProjectID, req.Title, req.Description, "9e3b1ece-124f-4f1a-bf61-60b3521319db")
 	if err != nil {
 		RespondError(w, r, h.logger, err)
 		return
