@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ricardocuellar/devboard/internal/domain"
+	"github.com/ricardocuellar/devboard/internal/middlewares"
 	"github.com/ricardocuellar/devboard/internal/usecase"
 	"github.com/ricardocuellar/devboard/internal/validator"
 )
@@ -110,8 +111,14 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//UUID temporal generado en clase
-	task, err := h.usercase.CreateTask(r.Context(), req.ProjectID, req.Title, req.Description, "9e3b1ece-124f-4f1a-bf61-60b3521319db")
+	userID := middlewares.GetUserID(r)
+	if userID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
+
+	//Usamos userID real
+	task, err := h.usercase.CreateTask(r.Context(), req.ProjectID, req.Title, req.Description, userID)
 	if err != nil {
 		RespondError(w, r, h.logger, err)
 		return
