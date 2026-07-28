@@ -45,6 +45,16 @@ func NewJWTManager(cfg JWTConfig) (*JWTManager, error) {
 	return &JWTManager{cfg: cfg}, nil
 }
 
+// GenerateAccessToken crea un access token de corta duración
+func (m *JWTManager) GenerateAccessToken(userID, email, role string) (string, error) {
+	return m.generateToken(userID, email, role, m.cfg.AccessTokenDuration)
+}
+
+// GenerateRefreshToken crea un refresh token de larga duración
+func (m *JWTManager) GenerateRefreshToken(userID, email, role string) (string, error) {
+	return m.generateToken(userID, email, role, m.cfg.RefreshTokenDuration)
+}
+
 // generateToken crea un token JWT firmado con los claims dados
 func (m *JWTManager) generateToken(userID, email, role string, duration time.Duration) (string, error) {
 	now := time.Now()
