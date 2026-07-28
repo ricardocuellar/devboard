@@ -167,3 +167,18 @@ func (uc *AuthUseCase) RefreshTokens(ctx context.Context, refreshToken string) (
 	return tokens, nil
 
 }
+
+// Logout revoca el refresh token del usuario
+func (uc *AuthUseCase) Logout(ctx context.Context, refreshToken string) error {
+	claims, err := uc.jwtManager.VerifyToken(refreshToken)
+	if err != nil {
+		return nil
+	}
+
+	if err := uc.tokenStore.RevokedRefreshToken(ctx, claims.ID, uc.refreshTokenDuration); err != nil {
+		return fmt.Errorf("revocando token en logout: %w", err)
+	}
+
+	return nil
+
+}
