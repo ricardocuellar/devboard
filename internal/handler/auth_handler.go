@@ -226,7 +226,18 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 // @Success     204     "Sin contenido"
 // @Router      /auth/logout [post]
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	var req logoutRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		RespondError(w, r, h.logger, domain.ErrInvalidInput)
+		return
+	}
 
+	if err := h.usecase.Logout(r.Context(), req.RefreshToken); err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // Respuestas con validaciones
