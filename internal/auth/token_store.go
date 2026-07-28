@@ -50,3 +50,42 @@ func (s *TokenStore) StoreRefreshToken(ctx context.Context, tokenID, userID stri
 
 	return nil
 }
+
+// ValidateRefreshToken verifica que un refresh token existe y no fue revocado
+func (s *TokenStore) ValidateRefreshToken(ctx context.Context, tokenID string) (string, error) {
+	revoked, err := s.redis.Exists(ctx, revokedKey(tokenID)).Result()
+
+	if err != nil {
+		return "", fmt.Errorf("verificando revocación: %w", err)
+	}
+
+	if revoked > 0 {
+		return "", ErrTokenRevoked
+	}
+
+	userID, err := s.redis.Get(ctx, refreshKey(tokenID)).Result()
+
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", ErrTokenNotFound
+		}
+
+		return "", fmt.Errorf("obteniendo refresh token: %w", err)
+	}
+
+	return userID, nil
+}
+
+// RevokedRefreshToken marca un token como revocado y elimina el store activo
+func (s *TokenStore) RevokedRefreshToken(ctx context.Context, tokenID string, ttl time.Duration) error {
+	pipe := s.redis.Pipeline()
+
+	pipe.Set(ctx, revokedKey(tokenID), "1", ttl)
+	pipe.Del(ctx, refreshKey(tokenID))
+
+	if _, err := pipe.Exec(ctx); err != nil {
+		return fmt.Errorf("revocando refresh token: %w", err)
+	}
+
+	return nil
+}
