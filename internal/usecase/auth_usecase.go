@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -46,7 +47,7 @@ func NewAuthUseCase(
 	}
 }
 
-// Register
+// Register crea un nuevo usuario con password hasheado
 func (uc *AuthUseCase) Register(ctx context.Context, email, name, password string) (*AuthTokens, error) {
 	passwordHash, err := auth.HashPassword(password)
 
@@ -105,4 +106,29 @@ func (uc *AuthUseCase) generateTokenPair(ctx context.Context, userID, email, rol
 		RefreshToken: refreshToken,
 		ExpiresIn:    15 * time.Minute,
 	}, nil
+}
+
+// Login verifica credenciales y retorna tokens si son válidas
+func (uc *AuthUseCase) Login(ctx context.Context, email, password string) (*AuthTokens, error) {
+	user, err := uc.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, fmt.Errorf("credenciales inválidas: %w", domain.ErrUnauthorized)
+		}
+		return nil, fmt.Errorf("buscando usuario: %w", err)
+	}
+
+	if err := auth.VerifyPassword(password, user.PasswordHash); err != nil {
+		if errors.Is(err, auth.ErrPasswordMissmatch) {
+			return nil, fmt.Errorf("credenciales inválidas: %w", domain.ErrUnauthorized)
+		}
+		return nil, fmt.Errorf("verificando password: %w", err)
+	}
+
+	tokens, err := uc.generateTokenPair(ctx, user.ID, user.Email, "member")
+	if err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
 }
