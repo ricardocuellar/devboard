@@ -3,6 +3,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -65,6 +66,29 @@ func HashPassword(password string) (string, error) {
 	)
 
 	return encoded, nil
+}
+
+// VerifyPassword compara un password en texto plano con su hash almacenado
+func VerifyPassword(password, encodedHash string) error {
+	params, salt, hash, err := parseHash(encodedHash)
+	if err != nil {
+		return fmt.Errorf("parseando hash: %w", err)
+	}
+
+	otherHash := argon2.IDKey(
+		[]byte(password),
+		salt,
+		params.iterations,
+		params.memory,
+		params.parallelims,
+		params.keyLength,
+	)
+
+	if subtle.ConstantTimeCompare(hash, otherHash) != 1 {
+		return ErrPasswordMissmatch
+	}
+
+	return nil
 }
 
 // parseHash extrae los parámetros y valores del hash en formato Argon2.
