@@ -178,7 +178,41 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // @Failure     401     {object} ProblemDetails
 // @Router      /auth/refresh [post]
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
+	var req refreshRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		RespondError(w, r, h.logger, domain.ErrInvalidInput)
+		return
+	}
 
+	if errs := h.validator.Validate(req); errs != nil {
+		if err := RespondValidationError(w, errs); err != nil {
+			h.logger.ErrorContext(
+				r.Context(),
+				"error al escribir respuesta de validación",
+				"error", err,
+				"method", r.Method,
+				"path", r.URL.Path,
+			)
+		}
+		return
+	}
+
+	tokens, err := h.usecase.RefreshTokens(r.Context(), req.RefreshToken)
+
+	if err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	if err := RespondJSON(w, http.StatusOK, toTokenResponse(tokens)); err != nil {
+		h.logger.ErrorContext(
+			r.Context(),
+			"error al escribir respuesta JSON",
+			"error", err,
+			"method", r.Method,
+			"path", r.URL.Path,
+		)
+	}
 }
 
 // Logout endpoint
