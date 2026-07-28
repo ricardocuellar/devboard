@@ -132,3 +132,38 @@ func (uc *AuthUseCase) Login(ctx context.Context, email, password string) (*Auth
 
 	return tokens, nil
 }
+
+// RefreshTokens renueva el par de tokens usando un refresh token válido
+func (uc *AuthUseCase) RefreshTokens(ctx context.Context, refreshToken string) (*AuthTokens, error) {
+	// Verificar firma
+	claims, err := uc.jwtManager.VerifyToken(refreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("refresh token inválido: %w", domain.ErrUnauthorized)
+	}
+
+	// Verificar que el token existe en Redis y no fue revocado
+	_, err = uc.tokenStore.ValidateRefreshToken(ctx, claims.ID)
+	if err != nil {
+
+		if errors.Is(err, auth.ErrTokenRevoked) || errors.Is(err, auth.ErrTokenNotFound) {
+			return nil, fmt.Errorf("refresh token no válido: %w", domain.ErrUnauthorized)
+		}
+
+		return nil, fmt.Errorf("validando refresh token: %w", err)
+	}
+
+	// Revocar el token
+	if err := uc.tokenStore.RevokedRefreshToken(ctx, claims.ID, uc.refreshTokenDuration); err != nil {
+		return nil, fmt.Errorf("revocando token anterior: %w", err)
+	}
+
+	// Generar nuevos tokens
+	tokens, err := uc.generateTokenPair(ctx, claims.ID, claims.Email, claims.Role)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+
+}
