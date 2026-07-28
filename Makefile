@@ -3,12 +3,13 @@ APP_NAME=devboard
 MAIN_PATH=./cmd/api
 MIGRATE_PATH=./migrations
 DB_URL=postgresql://postgres:password@localhost:5432/devboard?sslmode=disable
+JWT=dev-secret-key-change-in-production-min-32-chars$$
 
 .PHONY: run build test lint migrate-up migrate-down generate tidy help docs
 
 ## run: correr la aplicación
 run:
-	GO_ENV=development DATABASE_URL=$(DB_URL) REDIS_ADDR=localhost:6379 go run $(MAIN_PATH)/main.go
+	GO_ENV=development DATABASE_URL=$(DB_URL) JWT_SECRET=$(JWT) REDIS_ADDR=localhost:6379 go run $(MAIN_PATH)/main.go
 
 ## build: compilar el binario
 build:
