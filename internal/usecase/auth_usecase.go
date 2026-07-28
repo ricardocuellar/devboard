@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/ricardocuellar/devboard/internal/auth"
@@ -43,4 +44,29 @@ func NewAuthUseCase(
 		tokenStore:           tokenStore,
 		refreshTokenDuration: refreshTokenDuration,
 	}
+}
+
+// Register
+func (uc *AuthUseCase) Register(ctx context.Context, email, name, password string) (*AuthTokens, error) {
+	passwordHash, err := auth.HashPassword(password)
+
+	if err != nil {
+		return nil, fmt.Errorf("hasheando password: %w", err)
+	}
+
+	user := domain.NewUser(email, name, passwordHash)
+
+	if err := uc.userRepo.Create(ctx, user); err != nil {
+		return nil, fmt.Errorf("creando usuario: %w", err)
+	}
+
+	// TODO generateTokenPair
+	tokens, err := uc.generateTokenPair(ctx, user.ID, user.Email, "member")
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+
 }
