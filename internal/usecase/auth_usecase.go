@@ -70,3 +70,39 @@ func (uc *AuthUseCase) Register(ctx context.Context, email, name, password strin
 	return tokens, nil
 
 }
+
+// generateTokenPair genera un access token y un refresh token para el usuario
+func (uc *AuthUseCase) generateTokenPair(ctx context.Context, userID, email, role string) (*AuthTokens, error) {
+	accessToken, err := uc.jwtManager.GenerateAccessToken(userID, email, role)
+
+	if err != nil {
+		return nil, fmt.Errorf("generando access token: %w", err)
+	}
+
+	refreshToken, err := uc.jwtManager.GenerateRefreshToken(userID, email, role)
+
+	if err != nil {
+		return nil, fmt.Errorf("generando refresh token: %w", err)
+	}
+
+	refreshClaims, err := uc.jwtManager.VerifyToken(refreshToken)
+
+	if err != nil {
+		return nil, fmt.Errorf("extrayendo claims del refresh token: %w", err)
+	}
+
+	if err := uc.tokenStore.StoreRefreshToken(
+		ctx,
+		refreshClaims.ID,
+		userID,
+		uc.refreshTokenDuration,
+	); err != nil {
+		return nil, fmt.Errorf("guardando refresh token: %w", err)
+	}
+
+	return &AuthTokens{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    15 * time.Minute,
+	}, nil
+}
