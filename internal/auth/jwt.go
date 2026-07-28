@@ -55,6 +55,40 @@ func (m *JWTManager) GenerateRefreshToken(userID, email, role string) (string, e
 	return m.generateToken(userID, email, role, m.cfg.RefreshTokenDuration)
 }
 
+// VerifyToken verifica la firma y extrae los claims de un JWT token
+func (m *JWTManager) VerifyToken(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&Claims{},
+		func(t *jwt.Token) (any, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("algoritmo inesperado: %v", t.Header["alg"])
+			}
+
+			return m.cfg.SecretKey, nil
+		},
+		jwt.WithExpirationRequired(),
+		jwt.WithIssuedAt(),
+		jwt.WithIssuer("devboard"),
+	)
+
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, ErrTokenExpired
+		}
+
+		return nil, ErrTokenInvalid
+	}
+
+	claims, ok := token.Claims.(*Claims)
+
+	if !ok || !token.Valid {
+		return nil, ErrTokenInvalid
+	}
+
+	return claims, nil
+}
+
 // generateToken crea un token JWT firmado con los claims dados
 func (m *JWTManager) generateToken(userID, email, role string, duration time.Duration) (string, error) {
 	now := time.Now()
