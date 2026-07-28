@@ -5,10 +5,12 @@ import (
 	"strings"
 )
 
+// SecurityConfig struct para allow origins
 type SecurityConfig struct {
 	AllowedOrigins []string
 }
 
+// SecurityHeaders middleware para headers seguros
 func SecurityHeaders(cfg SecurityConfig) Middleware {
 
 	allowedOrigins := make(map[string]bool, len(cfg.AllowedOrigins))

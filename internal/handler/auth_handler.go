@@ -17,7 +17,7 @@ type AuthHandler struct {
 	logger    *slog.Logger
 }
 
-// NewAuthHander constructor
+// NewAuthHandler constructor
 func NewAuthHandler(uc *usecase.AuthUseCase, v *validator.Validator, logger *slog.Logger) *AuthHandler {
 	return &AuthHandler{
 		usecase:   uc,
