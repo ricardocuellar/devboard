@@ -1,3 +1,4 @@
+// Package auth argon2id
 package auth
 
 import (
@@ -5,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -63,4 +65,49 @@ func HashPassword(password string) (string, error) {
 	)
 
 	return encoded, nil
+}
+
+// parseHash extrae los parámetros y valores del hash en formato Argon2.
+func parseHash(encodedHash string) (*argon2Params, []byte, []byte, error) {
+	//$argon2id$v=19$m=65536,t=3,p=4$c2FsdA$hashGenerado
+	parts := strings.Split(encodedHash, "$")
+	// Formato esperado: ["", "argon2id", "v=19", "m=65536,t=3,p=2", "salt", "hash"]
+	if len(parts) != 6 {
+		return nil, nil, nil, ErrInvalidPasswordHash
+	}
+
+	if parts[1] != "argon2id" {
+		return nil, nil, nil, ErrInvalidPasswordHash
+	}
+
+	var version int
+	if _, err := fmt.Sscanf(parts[2], "v=%d", &version); err != nil {
+		return nil, nil, nil, ErrInvalidPasswordHash
+	}
+
+	if version != argon2.Version {
+		return nil, nil, nil, ErrInvalidPasswordHash
+	}
+
+	params := &argon2Params{}
+	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d",
+		&params.memory, &params.iterations, &params.parallelims); err != nil {
+		return nil, nil, nil, ErrInvalidPasswordHash
+	}
+
+	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
+	if err != nil {
+		return nil, nil, nil, ErrInvalidPasswordHash
+	}
+	params.saltLength = uint32(len(salt))
+
+	hash, err := base64.RawStdEncoding.DecodeString(parts[5])
+
+	if err != nil {
+		return nil, nil, nil, ErrInvalidPasswordHash
+	}
+
+	params.keyLength = uint32(len(hash))
+
+	return params, salt, hash, nil
 }
