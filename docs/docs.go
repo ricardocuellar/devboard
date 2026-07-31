@@ -196,6 +196,11 @@ const docTemplate = `{
         },
         "/projects/{id}/tasks": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retorna todas las tareas de un proyecto",
                 "produces": [
                     "application/json"
@@ -231,6 +236,11 @@ const docTemplate = `{
         },
         "/tasks": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Registra una nueva tarea en el sistema",
                 "consumes": [
                     "application/json"
@@ -271,6 +281,11 @@ const docTemplate = `{
         },
         "/tasks/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Obtiene una tarea por su ID",
                 "produces": [
                     "application/json"
@@ -306,6 +321,11 @@ const docTemplate = `{
         },
         "/tasks/{id}/assign": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Asigna una tarea a un miembro del equipo",
                 "consumes": [
                     "application/json"
@@ -353,6 +373,11 @@ const docTemplate = `{
         },
         "/tasks/{id}/status": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Mueve una tarea a un nuevo estado del tablero",
                 "consumes": [
                     "application/json"
@@ -729,6 +754,14 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Escribe el token con el formato: Bearer {token}",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
