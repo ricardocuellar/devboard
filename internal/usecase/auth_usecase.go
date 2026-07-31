@@ -158,7 +158,7 @@ func (uc *AuthUseCase) RefreshTokens(ctx context.Context, refreshToken string) (
 	}
 
 	// Generar nuevos tokens
-	tokens, err := uc.generateTokenPair(ctx, claims.ID, claims.Email, claims.Role)
+	tokens, err := uc.generateTokenPair(ctx, claims.UserID, claims.Email, claims.Role)
 
 	if err != nil {
 		return nil, err

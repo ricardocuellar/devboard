@@ -160,7 +160,7 @@ func main() {
 		middlewares.Logger(log),
 		middlewares.SecurityHeaders(middlewares.SecurityConfig{
 			AllowedOrigins: []string{
-				"http://loacalhost:3000",
+				"http://localhost:3000",
 				"http://localhost:5173",
 				"https://ricardocuellar.dev",
 			},

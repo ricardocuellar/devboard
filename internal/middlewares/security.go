@@ -34,8 +34,8 @@ func SecurityHeaders(cfg SecurityConfig) Middleware {
 			}
 
 			// Headers de seguridad
-			w.Header().Set("X-Content-Type=Options", "nosniff")
-			w.Header().Set("X-Frame=Options", "DENY")
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("X-Frame-Options", "DENY")
 
 			if !strings.HasPrefix(r.Host, "localhost") {
 				w.Header().Set("Strict-Transport-Security", "max-age=31536000;includeSubDomains")
