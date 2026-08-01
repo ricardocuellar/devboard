@@ -66,7 +66,7 @@ func (r *ProjectRepository) GetByID(ctx context.Context, id string) (*domain.Pro
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("Proyecto %s:%w", id, domain.ErrNotFound)
+			return nil, fmt.Errorf("proyecto %s : %w", id, domain.ErrNotFound)
 		}
 		return nil, fmt.Errorf("consultando proyecto %s: %w", id, err)
 	}
