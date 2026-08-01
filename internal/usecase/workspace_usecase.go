@@ -107,7 +107,15 @@ func (uc *WorkspaceUseCase) ListMembers(ctx context.Context, workspaceID, reques
 
 // RemoveMember elimina un miembro del workspace.
 func (uc *WorkspaceUseCase) RemoveMember(ctx context.Context, workspaceID, requesterID, targetUserID string) error {
-	// TODO
+	if err := uc.requireAdmin(ctx, workspaceID, requesterID); err != nil {
+		return err
+	}
+
+	if requesterID == targetUserID {
+		return fmt.Errorf("no puedes eliminarte a ti mismo del workspace: %w", domain.ErrForbidden)
+	}
+
+	return uc.repo.RemoveMember(ctx, workspaceID, targetUserID)
 }
 
 // requireMember verifica que el usuario sea miembro del workspace.
