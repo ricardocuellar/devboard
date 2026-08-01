@@ -21,7 +21,7 @@ ORDER BY created_at ASC;
 -- name: UpdateComment :one
 UPDATE comments
 SET
-    content = $2
+    content = $2,
     updated_at = NOW()
 WHERE id = $1
 RETURNING *;
