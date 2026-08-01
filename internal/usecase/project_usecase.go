@@ -46,10 +46,33 @@ func (uc *ProjectUseCase) CreateProject(ctx context.Context, workspaceID, name, 
 
 // GetProject obtiene un proyecto verificando membresía en el workspace
 func (uc *ProjectUseCase) GetProject(ctx context.Context, projectID, requesterID string) (*domain.Project, error) {
-	// TODO
+	project, err := uc.projectRepo.GetByID(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("obteniendo proyecto: %w", err)
+	}
+
+	_, err = uc.workspaceRepo.GetMember(ctx, project.WorkspaceID, requesterID)
+
+	if err != nil {
+		return nil, fmt.Errorf("acceso al proyecto denegado: %w", domain.ErrForbidden)
+	}
+
+	return project, nil
 }
 
 // ListWorkspaceProjects lista los proyectos de un workspace
 func (uc *ProjectUseCase) ListWorkspaceProjects(ctx context.Context, workspaceID, requesterID string) ([]*domain.Project, error) {
-	// TODO
+	_, err := uc.workspaceRepo.GetMember(ctx, workspaceID, requesterID)
+
+	if err != nil {
+		return nil, fmt.Errorf("acceso al workspace denegado: %w", domain.ErrForbidden)
+	}
+
+	projects, err := uc.projectRepo.ListByWorkspace(ctx, workspaceID)
+
+	if err != nil {
+		return nil, fmt.Errorf("listando proyectos: %w", err)
+	}
+
+	return projects, nil
 }
