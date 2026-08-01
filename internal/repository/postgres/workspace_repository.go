@@ -118,7 +118,20 @@ func (r *WorkspaceRepository) AddMember(ctx context.Context, member *domain.Work
 		return fmt.Errorf("user_id inválido: %w", domain.ErrInvalidInput)
 	}
 
-	// TODO
+	result, err := r.queries.AddWorkspaceMember(ctx, generated.AddWorkspaceMemberParams{
+		WorkspaceID: wsID,
+		UserID:      userID,
+		Role:        string(member.Role),
+	})
+
+	if err != nil {
+		return fmt.Errorf("agregando miembro al workspace: %w", err)
+	}
+
+	member.ID = result.ID.String()
+	member.JoinedAt = result.JoinedAt.Time
+
+	return nil
 }
 
 // GetMember obtiene la membresía de un usuario en un workspace
@@ -132,7 +145,21 @@ func (r *WorkspaceRepository) GetMember(ctx context.Context, workspaceID, userID
 		return nil, fmt.Errorf("user_id inválido: %w", domain.ErrNotFound)
 	}
 
-	// TODO
+	result, err := r.queries.GetWorkspaceMember(ctx, generated.GetWorkspaceMemberParams{
+		WorkspaceID: pgWsID,
+		UserID:      pgUserID,
+	})
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("membresía no encontrada: %w", domain.ErrNotFound)
+		}
+
+		return nil, fmt.Errorf("consultando membresía: %w", err)
+	}
+
+	return toDomainMember(result), nil
+
 }
 
 // ListMembers lista todos los miembros de un workspace
@@ -142,7 +169,18 @@ func (r *WorkspaceRepository) ListMembers(ctx context.Context, workspaceID strin
 		return nil, fmt.Errorf("workspace_id inválido: %w", domain.ErrInvalidInput)
 	}
 
-	// TODO
+	results, err := r.queries.ListWorkspaceMembers(ctx, pgWsID)
+
+	if err != nil {
+		return nil, fmt.Errorf("listando miembros del workspace: %w", err)
+	}
+
+	members := make([]*domain.WorkspaceMember, len(results))
+	for i, result := range results {
+		members[i] = toDomainMember(result)
+	}
+
+	return members, nil
 }
 
 // RemoveMember elimina un miembro del workspace
@@ -156,7 +194,10 @@ func (r *WorkspaceRepository) RemoveMember(ctx context.Context, workspaceID, use
 		return fmt.Errorf("user_id inválido: %w", domain.ErrInvalidInput)
 	}
 
-	// TODO
+	return r.queries.RemoveWorkspaceMember(ctx, generated.RemoveWorkspaceMemberParams{
+		WorkspaceID: pgWsID,
+		UserID:      pgUserID,
+	})
 }
 
 // toDomainWorkspace convierte el modelo generado por sqlc al modelo de dominio
