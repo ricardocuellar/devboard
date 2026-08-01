@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ricardocuellar/devboard/internal/domain"
@@ -59,7 +61,16 @@ func (r *CommentRepository) GetByID(ctx context.Context, id string) (*domain.Com
 		return nil, fmt.Errorf("id inválido %s: %w", id, domain.ErrNotFound)
 	}
 
-	//TODO
+	result, err := r.queries.GetCommentByID(ctx, pgID)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("comentario %s : %w", id, domain.ErrNotFound)
+		}
+		return nil, fmt.Errorf("consultando comentario %s: %w", id, err)
+	}
+
+	return toDomainComment(result), nil
 }
 
 // ListByTask lista los comentarios de una tarea en orden cronológico
@@ -68,7 +79,20 @@ func (r *CommentRepository) ListByTask(ctx context.Context, taskID string) ([]*d
 	if err := pgTaskID.Scan(taskID); err != nil {
 		return nil, fmt.Errorf("task_id inválido: %w", domain.ErrInvalidInput)
 	}
-	// TODO
+
+	results, err := r.queries.ListCommentsByTask(ctx, pgTaskID)
+	if err != nil {
+		return nil, fmt.Errorf("listando comentarios de la tarea: %w", err)
+	}
+
+	comments := make([]*domain.Comment, len(results))
+
+	for i, result := range results {
+		comments[i] = toDomainComment(result)
+	}
+
+	return comments, nil
+
 }
 
 // Delete elimina un comentario
@@ -78,7 +102,7 @@ func (r *CommentRepository) Delete(ctx context.Context, id string) error {
 		return fmt.Errorf("id inválido: %w", domain.ErrInvalidInput)
 	}
 
-	// TODO
+	return r.queries.DeleteComment(ctx, pgID)
 }
 
 // toDomainComment convierte el modelo sqlc al dominio
