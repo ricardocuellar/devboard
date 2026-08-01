@@ -79,12 +79,30 @@ func (uc *WorkspaceUseCase) ListUserWorkspaces(ctx context.Context, userID strin
 
 // AddMember agrega un miembro al workspace.
 func (uc *WorkspaceUseCase) AddMember(ctx context.Context, workspaceID, requesterID, newUserID string, role domain.WorkspaceRole) (*domain.WorkspaceMember, error) {
-	// TODO
+	if err := uc.requireAdmin(ctx, workspaceID, requesterID); err != nil {
+		return nil, err
+	}
+
+	if !role.IsValid() {
+		return nil, fmt.Errorf("rol inválido %q: %w", role, domain.ErrInvalidInput)
+	}
+
+	member := domain.NewWorkspaceMember(workspaceID, newUserID, role)
+
+	if err := uc.repo.AddMember(ctx, member); err != nil {
+		return nil, fmt.Errorf("agregando miembro: %w", err)
+	}
+
+	return member, nil
 }
 
 // ListMembers lista los miembros de un workspace.
 func (uc *WorkspaceUseCase) ListMembers(ctx context.Context, workspaceID, requesterID string) ([]*domain.WorkspaceMember, error) {
-	// TODO
+	if err := uc.requireMember(ctx, workspaceID, requesterID); err != nil {
+		return nil, err
+	}
+
+	return uc.repo.ListMembers(ctx, workspaceID)
 }
 
 // RemoveMember elimina un miembro del workspace.
@@ -104,5 +122,14 @@ func (uc *WorkspaceUseCase) requireMember(ctx context.Context, workspaceID, user
 
 // requireAdmin verifica que el usuario sea admin del workspace.
 func (uc *WorkspaceUseCase) requireAdmin(ctx context.Context, workspaceID, userID string) error {
-	// TODO
+	member, err := uc.repo.GetMember(ctx, workspaceID, userID)
+	if err != nil {
+		return fmt.Errorf("acceso al workspace denegado: %w", domain.ErrForbidden)
+	}
+
+	if member.Role != domain.WorkspaceRoleAdmin {
+		return fmt.Errorf("se requiere rol admin: %w", domain.ErrForbidden)
+	}
+
+	return nil
 }
