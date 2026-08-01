@@ -55,12 +55,26 @@ func (uc *WorkspaceUseCase) CreateWorkspace(ctx context.Context, name, descripti
 
 // GetWorkspace obtiene un workspace verificando que el usuario sea miembro
 func (uc *WorkspaceUseCase) GetWorkspace(ctx context.Context, workspaceID, requesterID string) (*domain.Workspace, error) {
-	// TODO
+	if err := uc.requireMember(ctx, workspaceID, requesterID); err != nil {
+		return nil, err
+	}
+
+	ws, err := uc.repo.GetWorkspaceByID(ctx, workspaceID)
+	if err != nil {
+		return nil, fmt.Errorf("obteniendo workspace: %w", err)
+	}
+
+	return ws, nil
 }
 
 // ListUserWorkspaces lista los workspaces del usuario autenticado
 func (uc *WorkspaceUseCase) ListUserWorkspaces(ctx context.Context, userID string) ([]*domain.Workspace, error) {
-	// TODO
+	workspaces, err := uc.repo.ListWorkspacesByUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("listando workspaces del usuario: %w", err)
+	}
+
+	return workspaces, nil
 }
 
 // AddMember agrega un miembro al workspace.
@@ -80,7 +94,12 @@ func (uc *WorkspaceUseCase) RemoveMember(ctx context.Context, workspaceID, reque
 
 // requireMember verifica que el usuario sea miembro del workspace.
 func (uc *WorkspaceUseCase) requireMember(ctx context.Context, workspaceID, userID string) error {
-	// TODO
+	_, err := uc.repo.GetMember(ctx, workspaceID, userID)
+	if err != nil {
+		return fmt.Errorf("acceso al workspace denegado: %w", domain.ErrForbidden)
+	}
+
+	return nil
 }
 
 // requireAdmin verifica que el usuario sea admin del workspace.
