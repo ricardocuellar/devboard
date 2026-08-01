@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ricardocuellar/devboard/internal/domain"
@@ -59,7 +61,17 @@ func (r *ProjectRepository) GetByID(ctx context.Context, id string) (*domain.Pro
 	if err := pgID.Scan(id); err != nil {
 		return nil, fmt.Errorf("id inválido %s: %w", id, domain.ErrNotFound)
 	}
-	// TODO
+
+	result, err := r.queries.GetProjectByID(ctx, pgID)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("Proyecto %s:%w", id, domain.ErrNotFound)
+		}
+		return nil, fmt.Errorf("consultando proyecto %s: %w", id, err)
+	}
+
+	return toDomainProject(result), nil
 }
 
 // ListByWorkspace lista los proyectos de un workspace
@@ -68,7 +80,20 @@ func (r *ProjectRepository) ListByWorkspace(ctx context.Context, workspaceID str
 	if err := pgWsID.Scan(workspaceID); err != nil {
 		return nil, fmt.Errorf("workspace_id inválido: %w", domain.ErrInvalidInput)
 	}
-	// TODO
+
+	results, err := r.queries.ListProjectsByWorkspace(ctx, pgWsID)
+	if err != nil {
+		return nil, fmt.Errorf("listando proyectos del workspace: %w", err)
+	}
+
+	projects := make([]*domain.Project, len(results))
+
+	for i, result := range results {
+		projects[i] = toDomainProject(result)
+	}
+
+	return projects, nil
+
 }
 
 // toDomainProject convierte el modelo sqlc al dominio
