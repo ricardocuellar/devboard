@@ -93,7 +93,18 @@ func (r *WorkspaceRepository) ListWorkspacesByUser(ctx context.Context, userID s
 		return nil, fmt.Errorf("user_id inválido: %w", domain.ErrInvalidInput)
 	}
 
-	// TODO
+	results, err := r.queries.ListWorkspacesByUser(ctx, pgUserID)
+
+	if err != nil {
+		return nil, fmt.Errorf("listando workspaces del usuario: %w", err)
+	}
+
+	workspaces := make([]*domain.Workspace, len(results))
+	for i, result := range results {
+		workspaces[i] = toDomainWorkspace(result)
+	}
+
+	return workspaces, nil
 }
 
 // AddMember agrega un usuario a un workspace con un rol
