@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ricardocuellar/devboard/internal/domain"
@@ -56,13 +58,32 @@ func (r *WorkspaceRepository) GetWorkspaceByID(ctx context.Context, id string) (
 		return nil, fmt.Errorf("id inválido %s: %w", id, domain.ErrNotFound)
 	}
 
-	// TODO
+	result, err := r.queries.GetWorkspaceByID(ctx, pgID)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("workspace %s: %w", id, domain.ErrNotFound)
+		}
+
+		return nil, fmt.Errorf("consultando workspace %s: %w", id, err)
+	}
+
+	return toDomainWorkspace(result), nil
 
 }
 
 // GetWorkspaceBySlug obtiene un workspace por slug
 func (r *WorkspaceRepository) GetWorkspaceBySlug(ctx context.Context, slug string) (*domain.Workspace, error) {
-	// TODO
+	result, err := r.queries.GetWorkspaceBySlug(ctx, slug)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("workspace slug %s: %w", slug, domain.ErrNotFound)
+		}
+
+		return nil, fmt.Errorf("consultando workspace por slug: %w", err)
+	}
+
+	return toDomainWorkspace(result), nil
 }
 
 // ListWorkspacesByUser lista los workspaces donde el usuario es miembro
