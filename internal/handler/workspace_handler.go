@@ -295,7 +295,20 @@ func (h *WorkspaceHandler) ListMembers(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Router      /workspaces/{id}/members/{userID} [delete]
 func (h *WorkspaceHandler) RemoveMember(w http.ResponseWriter, r *http.Request) {
-	// TODO
+	workspaceID := r.PathValue("id")
+	targetUserID := r.PathValue("userID")
+	requesterID := middlewares.GetUserID(r)
+	if requesterID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
+
+	if err := h.usecase.RemoveMember(r.Context(), workspaceID, requesterID, targetUserID); err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 /*
