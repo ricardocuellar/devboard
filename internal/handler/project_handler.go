@@ -107,7 +107,24 @@ func (h *ProjectHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Router      /projects/{id} [get]
 func (h *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
-	// TODO
+	id := r.PathValue("id")
+	userID := middlewares.GetUserID(r)
+	if userID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
+
+	project, err := h.usecase.GetProject(r.Context(), id, userID)
+
+	if err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	if err := RespondJSON(w, http.StatusOK, toProjectResponse(project)); err != nil {
+		h.logger.ErrorContext(r.Context(), "error escribiendo respuesta JSON",
+			"error", err, "path", r.URL.Path)
+	}
 }
 
 // ListByWorkspace lista proyectos de un workspace
