@@ -133,7 +133,7 @@ func (h *CommentHandler) ListByTask(w http.ResponseWriter, r *http.Request) {
 // Delete elimina un comentario
 //
 // @Summary     Eliminar comentario
-// @Description Elimina un comentario. Solo el autor puede borrarlo.
+// @Description Elimina un comentario. Solo el author puede borrarlo.
 // @Tags        comments
 // @Param       id path string true "ID del comentario"
 // @Success     204 "Sin contenido"
@@ -141,5 +141,19 @@ func (h *CommentHandler) ListByTask(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Router      /comments/{id} [delete]
 func (h *CommentHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	// TODO
+	commentID := r.PathValue("id")
+	requesterID := middlewares.GetUserID(r)
+
+	if requesterID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
+
+	if err := h.usecase.DeleteComment(r.Context(), commentID, requesterID); err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
