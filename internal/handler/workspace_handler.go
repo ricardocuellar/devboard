@@ -209,7 +209,13 @@ func (h *WorkspaceHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Router      /workspaces/{id}/members [post]
 func (h *WorkspaceHandler) AddMember(w http.ResponseWriter, r *http.Request) {
-	// TODO : Get user ID
+	workspaceID := r.PathValue("id")
+	requesterID := middlewares.GetUserID(r)
+
+	if requesterID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
 
 	var req addMemberRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -225,7 +231,16 @@ func (h *WorkspaceHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO
+	member, err := h.usecase.AddMember(r.Context(), workspaceID, requesterID, req.UserID, domain.WorkspaceRole(req.Role))
+	if err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	if err := RespondJSON(w, http.StatusCreated, toMemberResponse(member)); err != nil {
+		h.logger.ErrorContext(r.Context(), "error escribiendo respuesta JSON",
+			"error", err, "path", r.URL.Path)
+	}
 }
 
 // ListMembers lista los miembros de un workspace
