@@ -134,7 +134,32 @@ func (h *WorkspaceHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Router      /workspaces [get]
 func (h *WorkspaceHandler) List(w http.ResponseWriter, r *http.Request) {
-	// TODO
+	userID := middlewares.GetUserID(r)
+	if userID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
+
+	workspaces, err := h.usecase.ListUserWorkspaces(r.Context(), userID)
+
+	if err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	response := make([]workspaceResponse, len(workspaces))
+	for i, ws := range workspaces {
+		response[i] = toWorkspaceResponse(ws)
+	}
+
+	if err := RespondJSON(w, http.StatusOK, PaginatedResponse[workspaceResponse]{
+		Data:    response,
+		HasMore: false,
+	}); err != nil {
+		h.logger.ErrorContext(r.Context(), "error escribiendo respuesta JSON",
+			"error", err, "path", r.URL.Path)
+	}
+
 }
 
 // Get obtiene un workspace por ID
