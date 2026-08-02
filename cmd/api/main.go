@@ -166,13 +166,14 @@ func main() {
 	srv.RegisterRoutes("DELETE /api/v1/workspaces/{id}/members/{userID}", middlewares.Chain(http.HandlerFunc(workspaceHandler.RemoveMember), authMW))
 
 	// 6. Registro de rutas protegidas - Projects
+	srv.RegisterRoutes("POST /api/v1/projects", middlewares.Chain(http.HandlerFunc(projectHandler.Create), authMW))
+	srv.RegisterRoutes("GET /api/v1/projects/{id}", middlewares.Chain(http.HandlerFunc(projectHandler.Get), authMW))
+	srv.RegisterRoutes("GET /api/v1/workspaces/{id}/projects", middlewares.Chain(http.HandlerFunc(projectHandler.ListByWorkspace), authMW))
 
-	// // 6. Registro de rutas protegidas - Comments
-
-	// GET /api/v1/tasks/{id}
-	// GET /api/v1/projects/{id}/tasks
-	// PUT /api/v1/tasks/{id}/assign
-	// PUT /api/v1/tasks/{id}/status
+	// 6. Registro de rutas protegidas - Comments
+	srv.RegisterRoutes("POST /api/v1/tasks/{id}/comments", middlewares.Chain(http.HandlerFunc(commentHandler.Create), authMW))
+	srv.RegisterRoutes("GET /api/v1/tasks/{id}/comments", middlewares.Chain(http.HandlerFunc(commentHandler.ListByTask), authMW))
+	srv.RegisterRoutes("DELETE /api/v1/comments/{id}", middlewares.Chain(http.HandlerFunc(commentHandler.Delete), authMW))
 
 	// 7. Middleware chain
 	srv.UseChain(
