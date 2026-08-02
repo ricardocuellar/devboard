@@ -254,7 +254,33 @@ func (h *WorkspaceHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Router      /workspaces/{id}/members [get]
 func (h *WorkspaceHandler) ListMembers(w http.ResponseWriter, r *http.Request) {
-	// TODO
+	workspaceID := r.PathValue("id")
+	requesterID := middlewares.GetUserID(r)
+
+	if requesterID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
+
+	members, err := h.usecase.ListMembers(r.Context(), workspaceID, requesterID)
+
+	if err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	response := make([]memberResponse, len(members))
+	for i, m := range members {
+		response[i] = toMemberResponse(m)
+	}
+
+	if err := RespondJSON(w, http.StatusOK, PaginatedResponse[memberResponse]{
+		Data:    response,
+		HasMore: false,
+	}); err != nil {
+		h.logger.ErrorContext(r.Context(), "error escribiendo respuesta JSON",
+			"error", err, "path", r.URL.Path)
+	}
 }
 
 // RemoveMember elimina un miembro del workspace
