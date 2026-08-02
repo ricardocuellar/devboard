@@ -107,7 +107,27 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Router      /tasks/{id}/comments [get]
 func (h *CommentHandler) ListByTask(w http.ResponseWriter, r *http.Request) {
-	// TODO
+	taskID := r.PathValue("id")
+
+	comments, err := h.usecase.ListTaskComments(r.Context(), taskID)
+
+	if err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	response := make([]commentResponse, len(comments))
+	for i, c := range comments {
+		response[i] = toCommentResponse(c)
+	}
+
+	if err := RespondJSON(w, http.StatusOK, PaginatedResponse[commentResponse]{
+		Data:    response,
+		HasMore: false,
+	}); err != nil {
+		h.logger.ErrorContext(r.Context(), "error escribiendo respuesta JSON",
+			"error", err, "path", r.URL.Path)
+	}
 }
 
 // Delete elimina un comentario
