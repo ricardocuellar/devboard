@@ -138,5 +138,30 @@ func (h *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Router      /workspaces/{id}/projects [get]
 func (h *ProjectHandler) ListByWorkspace(w http.ResponseWriter, r *http.Request) {
-	// TODO
+	workspaceID := r.PathValue("id")
+	userID := middlewares.GetUserID(r)
+	if userID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
+
+	projects, err := h.usecase.ListWorkspaceProjects(r.Context(), workspaceID, userID)
+
+	if err != nil {
+		RespondError(w, r, h.logger, err)
+		return
+	}
+
+	response := make([]projectResponse, len(projects))
+	for i, p := range projects {
+		response[i] = toProjectResponse(p)
+	}
+
+	if err := RespondJSON(w, http.StatusOK, PaginatedResponse[projectResponse]{
+		Data:    response,
+		HasMore: false,
+	}); err != nil {
+		h.logger.ErrorContext(r.Context(), "error escribiendo respuesta JSON",
+			"error", err, "path", r.URL.Path)
+	}
 }
