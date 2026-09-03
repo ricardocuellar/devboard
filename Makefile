@@ -64,3 +64,7 @@ docker-logs:
 ## docs: generar documentación OpenAPI con swaggo
 docs: 
 	swag init -g cmd/api/main.go -o docs
+
+## run-identity: Inicia servidor de identity service
+run-identity: 
+	go run ./services/identity/cmd/api 
