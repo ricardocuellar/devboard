@@ -4,8 +4,10 @@ MAIN_PATH=./cmd/api
 MIGRATE_PATH=./migrations
 DB_URL=postgresql://postgres:password@localhost:5432/devboard?sslmode=disable
 JWT=dev-secret-key-change-in-production-min-32-chars$$
+IDENTITY_PATH=./services/identity
+IDENTITY_MAIN_PATH=${IDENTITY_PATH}/cmd/api
 
-.PHONY: run build test lint migrate-up migrate-down generate tidy help docs
+.PHONY: run build test lint migrate-up migrate-down generate tidy help docs run-identity identity-generate
 
 ## run: correr la aplicación
 run:
@@ -67,4 +69,12 @@ docs:
 
 ## run-identity: Inicia servidor de identity service
 run-identity: 
-	go run ./services/identity/cmd/api 
+	IDENTITY_HTTP_ADDR=:8081 \
+	IDENTITY_DATABASE_URL=$(DB_URL) \
+	JWT_SECRET=$(JWT) \
+	REDIS_ADDR=localhost:6379 \
+	go run $(IDENTITY_MAIN_PATH)
+
+## identity-generate: Genera código Go con sqlc
+identity-generate:
+	cd $(IDENTITY_PATH) && sqlc generate
