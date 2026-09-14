@@ -30,6 +30,24 @@ services:
       timeout: 5s
       retries: 5
 
+  identity-postgres:
+    image: postgres:16-alpine
+    container_name: devboard_identity_postgres
+    environment:
+      POSTGRES_USER: identity
+      POSTGRES_PASSWORD: identity
+      POSTGRES_DB: identity
+    ports:
+      - "5433:5432"
+    volumes:
+      - identity_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U identity -d identity" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+  identity_postgres_data:
   redis_data:
