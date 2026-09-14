@@ -10,7 +10,6 @@ import (
 
 	_ "github.com/ricardocuellar/devboard/docs"
 	"github.com/ricardocuellar/devboard/internal/auth"
-	"github.com/ricardocuellar/devboard/internal/cache"
 	"github.com/ricardocuellar/devboard/internal/handler"
 	"github.com/ricardocuellar/devboard/internal/logger"
 	"github.com/ricardocuellar/devboard/internal/middlewares"
@@ -39,7 +38,6 @@ func main() {
 	log := setupLogger()
 
 	dbURL := os.Getenv("DATABASE_URL")
-	redisAddr := os.Getenv("REDIS_ADDR")
 
 	// Crear pool de conexiones
 	pool, err := pgrepo.NewPool(context.Background(), pgrepo.Config{
@@ -59,27 +57,6 @@ func main() {
 
 	log.Info("conexión a base de datos establecida")
 
-	redisClient, err := cache.NewClient(context.Background(), cache.Config{
-		Addr:    redisAddr,
-		Timeout: 5 * time.Second,
-	})
-
-	if err != nil {
-		log.Error("no se pudo conectar a Redis", slog.Any("error", err))
-		os.Exit(1)
-	}
-
-	defer func() {
-		if err := redisClient.Close(); err != nil {
-			log.Error(
-				"no se pudo cerrar la conexión a Redis",
-				slog.Any("error", err),
-			)
-		}
-	}()
-
-	log.Info("conexión a Redis establecida")
-
 	// Auth Infrastructure
 	jwtSecret := os.Getenv("JWT_SECRET")
 	refreshTokenDuration := 7 * 24 * time.Hour
@@ -95,23 +72,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	tokenStore := auth.NewTokenStore(redisClient)
-
 	// 3. Dependencies compartidas
 
 	// Infrastructure: adapters
 	// userRepo := memory.NewUserRepository()
 	// taskRepo := memory.NewTaskRepository()
-	userRepo := pgrepo.NewUserRepository(pool)
 	taskRepo := pgrepo.NewTaskRepository(pool)
 	workspaceRepo := pgrepo.NewWorkspaceRepository(pool)
 	projectRepo := pgrepo.NewProjectRepository(pool)
 	commentRepo := pgrepo.NewCommentRepository(pool)
 
 	// Use cases: lógica del negocio
-	userUC := usecase.NewUserUseCase(userRepo)
 	taskUC := usecase.NewTaskUseCase(taskRepo, taskRepo)
-	authUC := usecase.NewAuthUseCase(userRepo, jwtManager, tokenStore, refreshTokenDuration)
 	workspaceUC := usecase.NewWorkspaceUseCase(workspaceRepo)
 	projectUC := usecase.NewProjectUseCase(projectRepo, workspaceRepo)
 	commentUC := usecase.NewCommentUseCase(commentRepo, taskRepo)
@@ -120,9 +92,7 @@ func main() {
 
 	// 4. Handlers
 	healthHandler := handler.NewHealthHandler()
-	userHandler := handler.NewUserHandler(userUC, validate, log)
 	taskHandler := handler.NewTaskHandler(taskUC, validate, log)
-	authHandler := handler.NewAuthHandler(authUC, validate, log)
 	workspaceHandler := handler.NewWorkspaceHandler(workspaceUC, validate, log)
 	projectHandler := handler.NewProjectHandler(projectUC, validate, log)
 	commentHandler := handler.NewCommentHandler(commentUC, validate, log)
@@ -143,12 +113,6 @@ func main() {
 	// 6. Registro de rutas públicas
 	srv.RegisterRoutes("GET /docs/", httpSwagger.WrapHandler)
 	srv.RegisterRoutes("GET /health", healthHandler)
-	srv.RegisterRoutes("POST /api/v1/auth/register", http.HandlerFunc(authHandler.Register))
-	srv.RegisterRoutes("POST /api/v1/auth/login", http.HandlerFunc(authHandler.Login))
-	srv.RegisterRoutes("POST /api/v1/auth/refresh", http.HandlerFunc(authHandler.Refresh))
-	srv.RegisterRoutes("POST /api/v1/auth/logout", http.HandlerFunc(authHandler.Logout))
-	srv.RegisterRoutes("POST /api/v1/users", http.HandlerFunc(userHandler.Create))
-	srv.RegisterRoutes("GET /api/v1/users/{id}", http.HandlerFunc(userHandler.Get))
 
 	// 6. Registro de rutas protegidas - Tasks
 	srv.RegisterRoutes("POST /api/v1/tasks", middlewares.Chain(http.HandlerFunc(taskHandler.Create), authMW))
