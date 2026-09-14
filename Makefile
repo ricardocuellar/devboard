@@ -6,8 +6,10 @@ DB_URL=postgresql://postgres:password@localhost:5432/devboard?sslmode=disable
 JWT=dev-secret-key-change-in-production-min-32-chars$$
 IDENTITY_PATH=./services/identity
 IDENTITY_MAIN_PATH=${IDENTITY_PATH}/cmd/api
+IDENTITY_MIGRATE_PATH=$(IDENTITY_PATH)/migrations
+IDENTITY_DB_URL=postgresql://identity:identity@localhost:5433/identity?sslmode=disable
 
-.PHONY: run build test lint migrate-up migrate-down generate tidy help docs run-identity identity-generate
+.PHONY: run build test lint migrate-up migrate-down generate tidy help docs run-identity identity-generate identity-migrate-create identity-migrate-up identity-migrate-down
 
 ## run: correr la aplicación
 run:
@@ -70,7 +72,7 @@ docs:
 ## run-identity: Inicia servidor de identity service
 run-identity: 
 	IDENTITY_HTTP_ADDR=:8081 \
-	IDENTITY_DATABASE_URL=$(DB_URL) \
+	IDENTITY_DATABASE_URL=$(IDENTITY_DB_URL) \
 	JWT_SECRET=$(JWT) \
 	REDIS_ADDR=localhost:6379 \
 	go run $(IDENTITY_MAIN_PATH)
@@ -78,3 +80,15 @@ run-identity:
 ## identity-generate: Genera código Go con sqlc
 identity-generate:
 	cd $(IDENTITY_PATH) && sqlc generate
+
+## identity-migrate-create: crea una nueva migración de identity (OJO para usarlo su uso es: make migrate-create name=create_users)
+identity-migrate-create:
+	migrate create -ext sql -dir $(IDENTITY_MIGRATE_PATH) -seq $(name)
+
+## identity-migrate-up: aplicar todas las migraciones pendientes para identity
+identity-migrate-up:
+	migrate -path $(IDENTITY_MIGRATE_PATH) -database "$(IDENTITY_DB_URL)" up
+
+## identity-migrate-down: revertir la última migración de identity
+identity-migrate-down:
+	migrate -path $(IDENTITY_MIGRATE_PATH) -database "$(IDENTITY_DB_URL)" down 1
