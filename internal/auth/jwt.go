@@ -1,3 +1,4 @@
+// Package auth jwt
 package auth
 
 import (

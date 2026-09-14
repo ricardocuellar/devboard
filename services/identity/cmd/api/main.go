@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/ricardocuellar/devboard/internal/middlewares"
 	"github.com/ricardocuellar/devboard/services/identity/internal/auth"
 	"github.com/ricardocuellar/devboard/services/identity/internal/cache"
 	"github.com/ricardocuellar/devboard/services/identity/internal/config"
 	"github.com/ricardocuellar/devboard/services/identity/internal/handler"
+	"github.com/ricardocuellar/devboard/services/identity/internal/middlewares"
 	"github.com/ricardocuellar/devboard/services/identity/internal/repository/postgres"
 	"github.com/ricardocuellar/devboard/services/identity/internal/server"
 	"github.com/ricardocuellar/devboard/services/identity/internal/usecase"
