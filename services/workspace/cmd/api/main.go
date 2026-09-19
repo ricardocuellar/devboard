@@ -104,17 +104,57 @@ func run() error {
 			)
 
 			_, _ = writer.Write([]byte(
-				`{"status": "ok", "service":"identity"}`,
+				`{"status": "ok", "service":"workspace"}`,
 			))
 		},
 	))
 
-	srv.RegisterRoutes("POST /api/v1/auth/register", http.HandlerFunc(authHandler.Register))
-	srv.RegisterRoutes("POST /api/v1/auth/login", http.HandlerFunc(authHandler.Login))
-	srv.RegisterRoutes("POST /api/v1/auth/refresh", http.HandlerFunc(authHandler.Refresh))
-	srv.RegisterRoutes("POST /api/v1/auth/logout", http.HandlerFunc(authHandler.Logout))
-	srv.RegisterRoutes("POST /api/v1/users", http.HandlerFunc(userHandler.Create))
-	srv.RegisterRoutes("GET /api/v1/users/{id}", http.HandlerFunc(userHandler.Get))
+	//Workspace routes
+	srv.RegisterRoutes("POST /api/v1/workspaces", middlewares.Chain(
+		http.HandlerFunc(workspaceHandler.Create),
+		authMiddleware,
+	))
+
+	srv.RegisterRoutes("GET /api/v1/workspaces", middlewares.Chain(
+		http.HandlerFunc(workspaceHandler.List),
+		authMiddleware,
+	))
+
+	srv.RegisterRoutes("GET /api/v1/workspaces/{id}", middlewares.Chain(
+		http.HandlerFunc(workspaceHandler.Get),
+		authMiddleware,
+	))
+
+	srv.RegisterRoutes("POST /api/v1/workspaces/{id}/members", middlewares.Chain(
+		http.HandlerFunc(workspaceHandler.AddMember),
+		authMiddleware,
+	))
+
+	srv.RegisterRoutes("GET /api/v1/workspaces/{id}/members", middlewares.Chain(
+		http.HandlerFunc(workspaceHandler.ListMembers),
+		authMiddleware,
+	))
+
+	srv.RegisterRoutes("DELETE /api/v1/workspaces/{id}/members/{userID}", middlewares.Chain(
+		http.HandlerFunc(workspaceHandler.RemoveMember),
+		authMiddleware,
+	))
+
+	// Project Routes
+	srv.RegisterRoutes("POST /api/v1/projects", middlewares.Chain(
+		http.HandlerFunc(projectHandler.Create),
+		authMiddleware,
+	))
+
+	srv.RegisterRoutes("GET /api/v1/projects/{id}", middlewares.Chain(
+		http.HandlerFunc(projectHandler.Get),
+		authMiddleware,
+	))
+
+	srv.RegisterRoutes("GET /api/v1/workspaces/{id}/projects", middlewares.Chain(
+		http.HandlerFunc(projectHandler.ListByWorkspace),
+		authMiddleware,
+	))
 
 	// HTTP middlewares
 	srv.Use(
@@ -137,7 +177,7 @@ func run() error {
 		middlewares.Recovery(logger),
 	)
 
-	logger.Info("Se inicio IDENTITY SERVICE",
+	logger.Info("Se inicio WORKSPACE SERVICE",
 		slog.String("addr", cfg.HTTPAddr),
 	)
 
