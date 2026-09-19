@@ -10,7 +10,8 @@ IDENTITY_MIGRATE_PATH=$(IDENTITY_PATH)/migrations
 IDENTITY_DB_URL=postgresql://identity:identity@localhost:5433/identity?sslmode=disable
 WORKSPACE_PATH=./services/workspace
 WORKSPACE_MAIN_PATH=${WORKSPACE_PATH}/cmd/api
-WORKSPACE_DB_URL=postgresql://postgres:password@localhost:5432/devboard?sslmode=disable
+WORKSPACE_MIGRATE_PATH=${WORKSPACE_PATH}/migrations
+WORKSPACE_DB_URL=postgresql://workspace:workspace@localhost:5434/workspace?sslmode=disable
 
 .PHONY: run build test lint migrate-up migrate-down generate tidy help docs run-identity identity-generate identity-migrate-create identity-migrate-up identity-migrate-down run-workspace workspace-generate
 
@@ -107,3 +108,16 @@ run-workspace:
 ## workspace-generate: Genera código Go con sqlc
 workspace-generate:
 	cd $(WORKSPACE_PATH) && sqlc generate
+
+
+## workspace-migrate-create: crea una nueva migración de workspace (OJO para usarlo su uso es: make migrate-create name=create_users)
+workspace-migrate-create:
+	migrate create -ext sql -dir $(WORKSPACE_MIGRATE_PATH) -seq $(name)
+
+## workspace-migrate-up: aplicar todas las migraciones pendientes para workspace
+workspace-migrate-up:
+	migrate -path $(WORKSPACE_MIGRATE_PATH) -database "$(WORKSPACE_DB_URL)" up
+
+## workspace-migrate-down: revertir la última migración de workspace
+workspace-migrate-down:
+	migrate -path $(WORKSPACE_MIGRATE_PATH) -database "$(WORKSPACE_DB_URL)" down 1
