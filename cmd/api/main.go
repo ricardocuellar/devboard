@@ -78,14 +78,10 @@ func main() {
 	// userRepo := memory.NewUserRepository()
 	// taskRepo := memory.NewTaskRepository()
 	taskRepo := pgrepo.NewTaskRepository(pool)
-	workspaceRepo := pgrepo.NewWorkspaceRepository(pool)
-	projectRepo := pgrepo.NewProjectRepository(pool)
 	commentRepo := pgrepo.NewCommentRepository(pool)
 
 	// Use cases: lógica del negocio
 	taskUC := usecase.NewTaskUseCase(taskRepo, taskRepo)
-	workspaceUC := usecase.NewWorkspaceUseCase(workspaceRepo)
-	projectUC := usecase.NewProjectUseCase(projectRepo, workspaceRepo)
 	commentUC := usecase.NewCommentUseCase(commentRepo, taskRepo)
 	// Validación compartida
 	validate := validator.New()
@@ -93,8 +89,6 @@ func main() {
 	// 4. Handlers
 	healthHandler := handler.NewHealthHandler()
 	taskHandler := handler.NewTaskHandler(taskUC, validate, log)
-	workspaceHandler := handler.NewWorkspaceHandler(workspaceUC, validate, log)
-	projectHandler := handler.NewProjectHandler(projectUC, validate, log)
 	commentHandler := handler.NewCommentHandler(commentUC, validate, log)
 
 	// notifier := notification.NewLogNotifier(log)
@@ -120,19 +114,6 @@ func main() {
 	srv.RegisterRoutes("PUT /api/v1/tasks/{id}/status", middlewares.Chain(http.HandlerFunc(taskHandler.UpdateStatus), authMW))
 	srv.RegisterRoutes("PUT /api/v1/tasks/{id}/assign", middlewares.Chain(http.HandlerFunc(taskHandler.Assign), authMW))
 	srv.RegisterRoutes("GET /api/v1/projects/{id}/tasks", middlewares.Chain(http.HandlerFunc(taskHandler.ListByProject), authMW))
-
-	// 6. Registro de rutas protegidas - Workspaces
-	srv.RegisterRoutes("POST /api/v1/workspaces", middlewares.Chain(http.HandlerFunc(workspaceHandler.Create), authMW))
-	srv.RegisterRoutes("GET /api/v1/workspaces", middlewares.Chain(http.HandlerFunc(workspaceHandler.List), authMW))
-	srv.RegisterRoutes("GET /api/v1/workspaces/{id}", middlewares.Chain(http.HandlerFunc(workspaceHandler.Get), authMW))
-	srv.RegisterRoutes("POST /api/v1/workspaces/{id}/members", middlewares.Chain(http.HandlerFunc(workspaceHandler.AddMember), authMW))
-	srv.RegisterRoutes("GET /api/v1/workspaces/{id}/members", middlewares.Chain(http.HandlerFunc(workspaceHandler.ListMembers), authMW))
-	srv.RegisterRoutes("DELETE /api/v1/workspaces/{id}/members/{userID}", middlewares.Chain(http.HandlerFunc(workspaceHandler.RemoveMember), authMW))
-
-	// 6. Registro de rutas protegidas - Projects
-	srv.RegisterRoutes("POST /api/v1/projects", middlewares.Chain(http.HandlerFunc(projectHandler.Create), authMW))
-	srv.RegisterRoutes("GET /api/v1/projects/{id}", middlewares.Chain(http.HandlerFunc(projectHandler.Get), authMW))
-	srv.RegisterRoutes("GET /api/v1/workspaces/{id}/projects", middlewares.Chain(http.HandlerFunc(projectHandler.ListByWorkspace), authMW))
 
 	// 6. Registro de rutas protegidas - Comments
 	srv.RegisterRoutes("POST /api/v1/tasks/{id}/comments", middlewares.Chain(http.HandlerFunc(commentHandler.Create), authMW))
