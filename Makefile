@@ -8,8 +8,11 @@ IDENTITY_PATH=./services/identity
 IDENTITY_MAIN_PATH=${IDENTITY_PATH}/cmd/api
 IDENTITY_MIGRATE_PATH=$(IDENTITY_PATH)/migrations
 IDENTITY_DB_URL=postgresql://identity:identity@localhost:5433/identity?sslmode=disable
+WORKSPACE_PATH=./services/workspace
+WORKSPACE_MAIN_PATH=${WORKSPACE_PATH}/cmd/api
+WORKSPACE_DB_URL=postgresql://postgres:password@localhost:5432/devboard?sslmode=disable
 
-.PHONY: run build test lint migrate-up migrate-down generate tidy help docs run-identity identity-generate identity-migrate-create identity-migrate-up identity-migrate-down
+.PHONY: run build test lint migrate-up migrate-down generate tidy help docs run-identity identity-generate identity-migrate-create identity-migrate-up identity-migrate-down run-workspace workspace-generate
 
 ## run: correr la aplicación
 run:
@@ -92,3 +95,15 @@ identity-migrate-up:
 ## identity-migrate-down: revertir la última migración de identity
 identity-migrate-down:
 	migrate -path $(IDENTITY_MIGRATE_PATH) -database "$(IDENTITY_DB_URL)" down 1
+
+
+## run-workspace: Inicia servidor de workspace service
+run-workspace: 
+	WORKSPACE_HTTP_ADDR=:8082 \
+	WORKSPACE_DATABASE_URL=$(WORKSPACE_DB_URL) \
+	JWT_SECRET=$(JWT) \
+	go run $(WORKSPACE_MAIN_PATH)
+
+## workspace-generate: Genera código Go con sqlc
+workspace-generate:
+	cd $(WORKSPACE_PATH) && sqlc generate
