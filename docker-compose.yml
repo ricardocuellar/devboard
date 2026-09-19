@@ -47,7 +47,25 @@ services:
       timeout: 5s
       retries: 5
 
+  workspace-postgres:
+    image: postgres:16-alpine
+    container_name: devboard_workspace_postgres
+    environment:
+      POSTGRES_USER: workspace
+      POSTGRES_PASSWORD: workspace
+      POSTGRES_DB: workspace
+    ports:
+      - "5434:5432"
+    volumes:
+      - workspace_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U workspace -d workspace" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
   identity_postgres_data:
+  workspace_postgres_data:
   redis_data:
