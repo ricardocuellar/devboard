@@ -2,7 +2,7 @@ version: "2"
 sql:
   - engine: "postgresql"              # motor de base de datos
     queries: "internal/repository/postgres/queries/"
-    schema: "internal/repository/postgres/schema"            
+    schema: "migrations/"            
     gen:
       go:
         package: "postgres"           
