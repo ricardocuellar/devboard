@@ -5,10 +5,6 @@ ALTER TABLE tasks
     DROP CONSTRAINT IF EXISTS
         fk_tasks_project_id;
 
-ALTER TABLE tasks
-    DROP CONSTRAINT IF EXISTS
-        tasks_project_id_fkey;
-
 
 -- Conservamos snapshots temporales
 -- para rollback y verificación.
