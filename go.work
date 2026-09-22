@@ -3,5 +3,6 @@ go 1.26.4
 use (
 	.
 	./services/identity
+	./services/task
 	./services/workspace
 )
