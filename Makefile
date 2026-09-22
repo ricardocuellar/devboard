@@ -14,7 +14,7 @@ WORKSPACE_MIGRATE_PATH=${WORKSPACE_PATH}/migrations
 WORKSPACE_DB_URL=postgresql://workspace:workspace@localhost:5434/workspace?sslmode=disable
 TASK_PATH=./services/task
 TASK_MAIN_PATH=$(TASK_PATH)/cmd/api
-TASK_DB_URL=postgresql://postgres:password@localhost:5432/devboard?sslmode=disable
+TASK_DB_URL=postgresql://task:task@localhost:5435/task?sslmode=disable
 TASK_MIGRATE_PATH=${TASK_PATH}/migrations
 
 .PHONY: run build test lint migrate-up migrate-down generate tidy help docs run-identity identity-generate identity-migrate-create identity-migrate-up identity-migrate-down run-workspace workspace-generate run-task task-generate task-migrate-create task-migrate-up task-migrate-down
