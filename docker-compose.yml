@@ -64,8 +64,26 @@ services:
       timeout: 5s
       retries: 5
 
+  task-postgres:
+    image: postgres:16-alpine
+    container_name: devboard_task_postgres
+    environment:
+      POSTGRES_USER: task
+      POSTGRES_PASSWORD: task
+      POSTGRES_DB: task
+    ports:
+      - "5435:5432"
+    volumes:
+      - task_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U task -d task" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
   identity_postgres_data:
   workspace_postgres_data:
+  task_postgres_data:
   redis_data:
