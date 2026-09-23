@@ -159,23 +159,8 @@ services:
       - app
       - workspace-data
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: devboard_postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: devboard
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
+  # ====
+  # Task
   task-postgres:
     image: postgres:16-alpine
     container_name: devboard_task_postgres
@@ -189,6 +174,73 @@ services:
       - task_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U task -d task" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - task-data
+
+  task-migrate:
+    image: migrate/migrate:v4.19.1
+    container_name: devboard_task_migrate
+    volumes:
+      - ./services/task/migrations:/migrations:ro
+    command:
+      - "-path=/migrations"
+      - "-database=postgresql://task:task@task-postgres:5432/task?sslmode=disable"
+      - "up"
+    depends_on:
+      task-postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - task-data
+
+  task:
+    build:
+      context: ./services/task
+      dockerfile: Dockerfile
+    container_name: devboard_task
+    environment:
+      TASK_HTTP_ADDR: ":8083"
+
+      TASK_DATABASE_URL: >-
+        postgresql://task:task@task-postgres:5432/task?sslmode=disable
+      JWT_SECRET: "${JWT_SECRET}"
+    ports:
+      - "8083:8083"
+    depends_on:
+      task-postgres:
+        condition: service_healthy
+
+      task-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8083/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - app
+      - task-data
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: devboard_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: devboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
