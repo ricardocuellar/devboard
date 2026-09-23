@@ -90,23 +90,8 @@ services:
       - app
       - identity-data
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: devboard_postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: devboard
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
+  # ====
+  # Workspace
   workspace-postgres:
     image: postgres:16-alpine
     container_name: devboard_workspace_postgres
@@ -120,6 +105,73 @@ services:
       - workspace_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U workspace -d workspace" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - workspace-data
+
+  workspace-migrate:
+    image: migrate/migrate:v4.19.1
+    container_name: devboard_workspace_migrate
+    volumes:
+      - ./services/workspace/migrations:/migrations:ro
+    command:
+      - "-path=/migrations"
+      - "-database=postgresql://workspace:workspace@workspace-postgres:5432/workspace?sslmode=disable"
+      - "up"
+    depends_on:
+      workspace-postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - workspace-data
+
+  workspace:
+    build:
+      context: ./services/workspace
+      dockerfile: Dockerfile
+    container_name: devboard_workspace
+    environment:
+      WORKSPACE_HTTP_ADDR: ":8082"
+
+      WORKSPACE_DATABASE_URL: >-
+        postgresql://workspace:workspace@workspace-postgres:5432/workspace?sslmode=disable
+      JWT_SECRET: "${JWT_SECRET}"
+    ports:
+      - "8082:8082"
+    depends_on:
+      workspace-postgres:
+        condition: service_healthy
+
+      workspace-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8082/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - app
+      - workspace-data
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: devboard_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: devboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
