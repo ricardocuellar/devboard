@@ -1,35 +1,6 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: devboard_postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: devboard
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: devboard_redis
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
+  # ====
+  # Identity
   identity-postgres:
     image: postgres:16-alpine
     container_name: devboard_identity_postgres
@@ -43,6 +14,95 @@ services:
       - identity_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U identity -d identity" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - identity-data
+  redis:
+    image: redis:7-alpine
+    container_name: devboard_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - identity-data
+
+  identity-migrate:
+    image: migrate/migrate:v4.19.1
+    container_name: devboard_identity_migrate
+    volumes:
+      - ./services/identity/migrations:/migrations:ro
+    command:
+      - "-path=/migrations"
+      - "-database=postgresql://identity:identity@identity-postgres:5432/identity?sslmode=disable"
+      - "up"
+    depends_on:
+      identity-postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - identity-data
+
+  identity:
+    build:
+      context: ./services/identity
+      dockerfile: Dockerfile
+    container_name: devboard_identity
+    environment:
+      IDENTITY_HTTP_ADDR: ":8081"
+
+      IDENTITY_DATABASE_URL: >-
+        postgresql://identity:identity@identity-postgres:5432/identity?sslmode=disable
+      REDIS_ADDR: "redis:6379"
+
+      JWT_SECRET: "${JWT_SECRET}"
+    ports:
+      - "8081:8081"
+    depends_on:
+      identity-postgres:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+      identity-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8081/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - app
+      - identity-data
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: devboard_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: devboard
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
