@@ -251,3 +251,18 @@ volumes:
   workspace_postgres_data:
   task_postgres_data:
   redis_data:
+
+networks:
+  app:
+
+  identity-data:
+    internal: true
+
+  workspace-data:
+    internal: true
+
+  task-data:
+    internal: true
+
+  legacy-data:
+    internal: true
