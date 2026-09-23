@@ -1,3 +1,4 @@
+// Package domain errors
 package domain
 
 import "errors"
