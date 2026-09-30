@@ -1,0 +1,4 @@
+
+syntax = "proto3";
+package devboard.workspace.v1;
+option go_package = "github.com/ricardocuellar/devboard/contracts/gen/go/devboard/workspace/v1;";
