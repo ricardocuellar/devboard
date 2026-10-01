@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	HTTPAddr    string
+	GRPCAddr    string
 	DatabaseURL string
 	JWTSecret   string
 }
@@ -15,6 +16,7 @@ func Load() (Config, error) {
 
 	cfg := Config{
 		HTTPAddr:    envOrDefault("WORKSPACE_HTTP_ADDR", ":8082"),
+		GRPCAddr:    envOrDefault("WORKSPACE_GRPC_ADDR", ":9092"),
 		DatabaseURL: envOrDefault("WORKSPACE_DATABASE_URL", ""),
 		JWTSecret:   envOrDefault("JWT_SECRET", "dev-secret-key-change-in-production-min-32-chars$$"),
 	}
