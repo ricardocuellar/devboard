@@ -16,8 +16,9 @@ TASK_PATH=./services/task
 TASK_MAIN_PATH=$(TASK_PATH)/cmd/api
 TASK_DB_URL=postgresql://task:task@localhost:5435/task?sslmode=disable
 TASK_MIGRATE_PATH=${TASK_PATH}/migrations
+CONTRACTS_PATH=./contracts
 
-.PHONY: run build test lint migrate-up migrate-down generate tidy help docs run-identity identity-generate identity-migrate-create identity-migrate-up identity-migrate-down run-workspace workspace-generate run-task task-generate task-migrate-create task-migrate-up task-migrate-down compose-build compose-up compose-down compose-ps compose-logs compose-config
+.PHONY: run build test lint migrate-up migrate-down generate tidy help docs run-identity identity-generate identity-migrate-create identity-migrate-up identity-migrate-down run-workspace workspace-generate run-task task-generate task-migrate-create task-migrate-up task-migrate-down compose-build compose-up compose-down compose-ps compose-logs compose-config proto-format proto-lint proto-build proto-generate proto-check
 
 ## run: correr la aplicación
 run:
@@ -173,3 +174,22 @@ compose-logs:
 ## compose-config: Compose config
 compose-config:
 	docker compose config
+## proto-format: Formatear proto
+proto-format:
+	cd $(CONTRACTS_PATH) && buf format -w
+## proto-lint: Aplicar linter a proto
+proto-lint:
+	cd $(CONTRACTS_PATH) && buf lint
+## proto-build: Construir contratos
+proto-build:
+	cd $(CONTRACTS_PATH) && buf build
+## proto-generate: Generar código con Buf e instalar dependencias
+proto-generate:
+	cd $(CONTRACTS_PATH) && buf generate
+	cd $(CONTRACTS_PATH) && go mod tidy
+
+## proto-check: Revisar linter, construir  buf y probar generación con test
+proto-check:
+	cd $(CONTRACTS_PATH) && buf lint
+	cd $(CONTRACTS_PATH) && buf build
+	cd $(CONTRACTS_PATH) && go test ./...
