@@ -13,6 +13,7 @@ import (
 	"github.com/ricardocuellar/devboard/services/workspace/internal/middlewares"
 	"github.com/ricardocuellar/devboard/services/workspace/internal/repository/postgres"
 	"github.com/ricardocuellar/devboard/services/workspace/internal/server"
+	grpcTransport "github.com/ricardocuellar/devboard/services/workspace/internal/transport/grpc"
 	"github.com/ricardocuellar/devboard/services/workspace/internal/usecase"
 	"github.com/ricardocuellar/devboard/services/workspace/internal/validator"
 )
@@ -68,6 +69,8 @@ func run() error {
 
 	projectUseCase := usecase.NewProjectUseCase(projectRepository, workspaceRepository)
 
+	projectAccessUseCase := usecase.NewProjectAccessUseCase(projectRepository, workspaceRepository)
+
 	validate := validator.New()
 
 	// handlers
@@ -83,12 +86,20 @@ func run() error {
 		logger,
 	)
 
+	grpcHandler := grpcTransport.NewHandler(projectAccessUseCase, logger)
+
 	// Server
 	srv := server.New(cfg.HTTPAddr,
 		server.WithLogger(logger),
 		server.WithReadTimeout(15*time.Second),
 		server.WithWriteTimeout(30*time.Second),
 	)
+
+	grpcServer, err := grpcTransport.NewServer(cfg.GRPCAddr, grpcHandler, logger)
+
+	if err != nil {
+		return err
+	}
 
 	authMiddleware := middlewares.RequireAuth(tokenVerifier, logger)
 
