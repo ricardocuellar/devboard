@@ -3,12 +3,9 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 // Server struct
@@ -48,30 +45,20 @@ func New(addr string, opts ...Option) *Server {
 // Start server
 func (server *Server) Start() error {
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	server.logger.Info("iniciando servidor...", slog.String("addr", server.httpServer.Addr))
 
-	defer signal.Stop(quit)
+	err := server.httpServer.ListenAndServe()
 
-	serveErr := make(chan error, 1)
-	go func() {
-		server.logger.Info("servidor iniciado", slog.String("addr", server.httpServer.Addr))
-		if err := server.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			serveErr <- err
-		}
-	}()
-
-	select {
-	case err := <-serveErr:
-		return err
-	case sig := <-quit:
-		server.logger.Info("señal recibida, iniciando shutdown",
-			slog.String("signal", sig.String()))
+	if err != nil && err != http.ErrServerClosed {
+		return fmt.Errorf("serve http: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	return nil
 
+}
+
+// Shutdown method
+func (server *Server) Shutdown(ctx context.Context) error {
 	if err := server.httpServer.Shutdown(ctx); err != nil {
 		server.logger.Error("error en shutdown", slog.Any("error", err))
 		return err

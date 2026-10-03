@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/ricardocuellar/devboard/services/workspace/internal/auth"
@@ -192,5 +194,45 @@ func run() error {
 		slog.String("addr", cfg.HTTPAddr),
 	)
 
-	return srv.Start()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+
+	defer stop()
+
+	errCh := make(chan error, 2)
+
+	go func() {
+		errCh <- srv.Start()
+	}()
+
+	go func() {
+		errCh <- grpcServer.Serve()
+	}()
+
+	var runErr error
+
+	select {
+	case <-ctx.Done():
+		logger.Info("Señal de apagado para workspace recibida")
+	case err := <-errCh:
+		if err != nil {
+			runErr = err
+			logger.Error("El servidor workspace falló", slog.Any("error", err))
+		}
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	grpcServer.Shutdown(5 * time.Second)
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Error("http shutdown falló", slog.Any("error", err))
+
+		if runErr == nil {
+			runErr = err
+		}
+	}
+
+	return runErr
 }
