@@ -2,12 +2,20 @@ FROM golang:1.26.4-alpine AS builder
 
 WORKDIR /src
 
-COPY go.mod go.sum ./
+COPY contracts/go.mod contracts/go.sum ./contracts/
+COPY services/workspace/go.mod services/workspace/go.sum ./services/workspace/
+
+WORKDIR /src/services/workspace
 
 RUN go mod download \
     && go mod verify
 
-COPY . .
+WORKDIR /src
+
+COPY contracts ./contracts
+COPY services/workspace ./services/workspace
+
+WORKDIR /src/services/workspace
 
 RUN CGO_ENABLED=0 \
     GOOS=linux \
