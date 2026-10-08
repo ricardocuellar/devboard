@@ -9,6 +9,7 @@ import (
 	workspacev1 "github.com/ricardocuellar/devboard/contracts/gen/go/devboard/workspace/v1"
 
 	googlegrpc "google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type Server struct {
@@ -38,6 +39,10 @@ func NewServer(
 	workspacev1.RegisterWorkspaceServiceServer(
 		grpcServer,
 		handler,
+	)
+
+	reflection.Register(
+		grpcServer,
 	)
 
 	return &Server{
