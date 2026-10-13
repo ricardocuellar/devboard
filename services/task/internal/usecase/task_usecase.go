@@ -21,20 +21,29 @@ type TaskQueryRepository interface {
 
 // TaskUseCase struct usecase
 type TaskUseCase struct {
-	commands TaskCommandRepository
-	queries  TaskQueryRepository
+	commands      TaskCommandRepository
+	queries       TaskQueryRepository
+	projectAccess ProjectAccessChecker
 }
 
 // NewTaskUseCase constructor
-func NewTaskUseCase(commands TaskCommandRepository, queries TaskQueryRepository) *TaskUseCase {
+func NewTaskUseCase(commands TaskCommandRepository, queries TaskQueryRepository, projectAccess ProjectAccessChecker) *TaskUseCase {
 	return &TaskUseCase{
-		commands: commands,
-		queries:  queries,
+		commands:      commands,
+		queries:       queries,
+		projectAccess: projectAccess,
 	}
 }
 
 // CreateTask método para crear tarea
 func (uc *TaskUseCase) CreateTask(ctx context.Context, projectID, title, description, createdBy string) (*domain.Task, error) {
+
+	_, err := uc.projectAccess.ValidateProjectAccess(ctx, projectID, createdBy)
+
+	if err != nil {
+		return nil, err
+	}
+
 	task := domain.NewTask(projectID, title, description, createdBy)
 
 	if err := uc.commands.Create(ctx, task); err != nil {
