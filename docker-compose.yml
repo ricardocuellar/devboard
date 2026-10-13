@@ -202,8 +202,8 @@ services:
 
   task:
     build:
-      context: ./services/task
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/task/Dockerfile
     container_name: devboard_task
     environment:
       TASK_HTTP_ADDR: ":8083"
@@ -211,6 +211,7 @@ services:
       TASK_DATABASE_URL: >-
         postgresql://task:task@task-postgres:5432/task?sslmode=disable
       JWT_SECRET: "${JWT_SECRET}"
+      WORKSPACE_GRPC_TARGET: "workspace:9092"
     ports:
       - "8083:8083"
     depends_on:
@@ -219,6 +220,9 @@ services:
 
       task-migrate:
         condition: service_completed_successfully
+
+      workspace:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-fsS", "http://localhost:8083/health" ]
       interval: 10s

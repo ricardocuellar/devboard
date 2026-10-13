@@ -6,6 +6,9 @@ require (
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.11.0
+	github.com/ricardocuellar/devboard v0.0.0-20260818202845-013aace75347
+	github.com/ricardocuellar/devboard/contracts v0.0.0
+	google.golang.org/grpc v1.84.0
 )
 
 require (
@@ -17,7 +20,12 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260706201446-f0a921348800 // indirect
+	google.golang.org/protobuf v1.36.12 // indirect
 )
+
+replace github.com/ricardocuellar/devboard/contracts => ../../contracts
