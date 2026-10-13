@@ -6,17 +6,19 @@ import (
 )
 
 type Config struct {
-	HTTPAddr    string
-	DatabaseURL string
-	JWTSecret   string
+	HTTPAddr            string
+	DatabaseURL         string
+	JWTSecret           string
+	WorkspaceGRPCTarget string
 }
 
 func Load() (Config, error) {
 
 	cfg := Config{
-		HTTPAddr:    envOrDefault("TASK_HTTP_ADDR", ":8083"),
-		DatabaseURL: envOrDefault("TASK_DATABASE_URL", ""),
-		JWTSecret:   envOrDefault("JWT_SECRET", "dev-secret-key-change-in-production-min-32-chars$$"),
+		HTTPAddr:            envOrDefault("TASK_HTTP_ADDR", ":8083"),
+		DatabaseURL:         envOrDefault("TASK_DATABASE_URL", ""),
+		JWTSecret:           envOrDefault("JWT_SECRET", "dev-secret-key-change-in-production-min-32-chars$$"),
+		WorkspaceGRPCTarget: envOrDefault("WORKSPACE_GRPC_TARGET", "localhost:9092"),
 	}
 
 	// httpAddr := os.Getenv("TASK_HTTP_ADDR")

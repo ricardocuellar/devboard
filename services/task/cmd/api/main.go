@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ricardocuellar/devboard/services/task/internal/auth"
+	"github.com/ricardocuellar/devboard/services/task/internal/client/workspace"
 	"github.com/ricardocuellar/devboard/services/task/internal/config"
 	"github.com/ricardocuellar/devboard/services/task/internal/handler"
 	"github.com/ricardocuellar/devboard/services/task/internal/middlewares"
@@ -63,8 +64,20 @@ func run() error {
 	taskRepository := postgres.NewTaskRepository(pool)
 	commentRepository := postgres.NewCommentRepository(pool)
 
+	workspaceGRPCClient, err := workspace.NewClient(cfg.WorkspaceGRPCTarget)
+
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := workspaceGRPCClient.Close(); err != nil {
+			logger.Error("Fallo al cerrar workspace client", slog.Any("error", err))
+		}
+	}()
+
 	// Use cases
-	taskUseCase := usecase.NewTaskUseCase(taskRepository, taskRepository)
+	taskUseCase := usecase.NewTaskUseCase(taskRepository, taskRepository, workspaceGRPCClient)
 
 	commentUseCase := usecase.NewCommentUseCase(commentRepository, taskRepository)
 
