@@ -64,7 +64,7 @@ func run() error {
 	taskRepository := postgres.NewTaskRepository(pool)
 	commentRepository := postgres.NewCommentRepository(pool)
 
-	workspaceGRPCClient, err := workspace.NewClient(cfg.WorkspaceGRPCTarget)
+	workspaceGRPCClient, err := workspace.NewClient(cfg.WorkspaceGRPCTarget, cfg.WorkspaceGRPCTimeout)
 
 	if err != nil {
 		return err

@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"time"
 
 	workspacev1 "github.com/ricardocuellar/devboard/contracts/gen/go/devboard/workspace/v1"
 	"github.com/ricardocuellar/devboard/internal/domain"
@@ -17,9 +18,15 @@ import (
 type Client struct {
 	connection *grpc.ClientConn
 	client     workspacev1.WorkspaceServiceClient
+	timeout    time.Duration
 }
 
-func NewClient(target string) (*Client, error) {
+func NewClient(target string, timeout time.Duration) (*Client, error) {
+
+	if timeout <= 0 {
+		return nil, fmt.Errorf("El timeout de GRPC Workspace debe ser positivo")
+	}
+
 	connection, err :=
 		grpc.NewClient(
 			target,
@@ -39,6 +46,7 @@ func NewClient(target string) (*Client, error) {
 	return &Client{
 		connection: connection,
 		client:     workspacev1.NewWorkspaceServiceClient(connection),
+		timeout:    timeout,
 	}, nil
 }
 

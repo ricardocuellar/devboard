@@ -212,6 +212,7 @@ services:
         postgresql://task:task@task-postgres:5432/task?sslmode=disable
       JWT_SECRET: "${JWT_SECRET}"
       WORKSPACE_GRPC_TARGET: "workspace:9092"
+      WORKSPACE_GRPC_TIMEOUT: "1s"
     ports:
       - "8083:8083"
     depends_on:

@@ -3,22 +3,32 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
 )
 
 type Config struct {
-	HTTPAddr            string
-	DatabaseURL         string
-	JWTSecret           string
-	WorkspaceGRPCTarget string
+	HTTPAddr             string
+	DatabaseURL          string
+	JWTSecret            string
+	WorkspaceGRPCTarget  string
+	WorkspaceGRPCTimeout time.Duration
 }
 
 func Load() (Config, error) {
 
+	workspaceGRPCTimeoutValue := envOrDefault("WORKSPACE_GRPC_TIMEOUT", "1s")
+	workspaceGRPCTimeout, err := time.ParseDuration(workspaceGRPCTimeoutValue)
+
+	if err != nil {
+		return Config{}, fmt.Errorf("parse WORKSPACE_GRPC_TIMEOUT: %w", err)
+	}
+
 	cfg := Config{
-		HTTPAddr:            envOrDefault("TASK_HTTP_ADDR", ":8083"),
-		DatabaseURL:         envOrDefault("TASK_DATABASE_URL", ""),
-		JWTSecret:           envOrDefault("JWT_SECRET", "dev-secret-key-change-in-production-min-32-chars$$"),
-		WorkspaceGRPCTarget: envOrDefault("WORKSPACE_GRPC_TARGET", "localhost:9092"),
+		HTTPAddr:             envOrDefault("TASK_HTTP_ADDR", ":8083"),
+		DatabaseURL:          envOrDefault("TASK_DATABASE_URL", ""),
+		JWTSecret:            envOrDefault("JWT_SECRET", "dev-secret-key-change-in-production-min-32-chars$$"),
+		WorkspaceGRPCTarget:  envOrDefault("WORKSPACE_GRPC_TARGET", "localhost:9092"),
+		WorkspaceGRPCTimeout: workspaceGRPCTimeout,
 	}
 
 	// httpAddr := os.Getenv("TASK_HTTP_ADDR")
