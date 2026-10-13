@@ -10,6 +10,7 @@ import (
 	"github.com/ricardocuellar/devboard/services/workspace/internal/usecase"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -45,6 +46,17 @@ func (handler *Handler) ValidateProjectAccess(
 				"request requerida",
 			)
 	}
+
+	callerService := "unknown"
+
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		values := md.Get("x-caller-service")
+		if len(values) > 0 {
+			callerService = values[0]
+		}
+	}
+
+	handler.logger.DebugContext(ctx, "grpc request recibido", slog.String("caller_service", callerService), slog.String("method", "ValidateProjectAcess"))
 
 	result, err :=
 		handler.projectAccess.Validate(

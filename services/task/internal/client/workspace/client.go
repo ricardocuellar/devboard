@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -60,6 +61,8 @@ func (client *Client) ValidateProjectAccess(ctx context.Context, projectID strin
 	rpcCtx, cancel := context.WithTimeout(ctx, client.timeout)
 
 	defer cancel()
+
+	rpcCtx = metadata.AppendToOutgoingContext(rpcCtx, "x-caller-service", "task")
 
 	response, err := client.client.ValidateProjectAccess(ctx, &workspacev1.ValidateProjectAccessRequest{
 		ProjectId: projectID,
