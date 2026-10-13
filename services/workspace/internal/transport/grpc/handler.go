@@ -70,7 +70,14 @@ func (handler *Handler) mapError(
 	ctx context.Context,
 	err error,
 ) error {
+
 	switch {
+	case errors.Is(err, context.Canceled):
+		return status.Error(codes.Canceled, "request cancelada")
+
+	case errors.Is(err, context.DeadlineExceeded):
+		return status.Error(codes.DeadlineExceeded, "deadline excedido")
+
 	case errors.Is(
 		err,
 		domain.ErrInvalidInput,

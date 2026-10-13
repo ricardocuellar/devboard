@@ -15,4 +15,8 @@ var (
 	ErrInvalidInput = errors.New("datos de entrada inválidos")
 	//ErrInternal reutilizable
 	ErrInternal = errors.New("error interno")
+	//ErrDependencyUnavailable reutilizable
+	ErrDependencyUnavailable = errors.New("Dependencia no disponible")
+	//ErrDepencyTimeout reutilizable
+	ErrDepencyTimeout = errors.New("Tiempo excedido")
 )

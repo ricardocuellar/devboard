@@ -34,6 +34,16 @@ func RespondError(writer http.ResponseWriter, request *http.Request, logger *slo
 	problem.Instance = request.URL.Path
 
 	switch {
+	case errors.Is(err, domain.ErrDependencyUnavailable):
+		problem.Type = problemBaseURL + "/not-found"
+		problem.Title = "Recurso no disponible"
+		problem.Status = http.StatusServiceUnavailable
+		problem.Detail = err.Error()
+	case errors.Is(err, domain.ErrDepencyTimeout):
+		problem.Type = problemBaseURL + "/not-found"
+		problem.Title = "Recurso tiempo de respuesta expirado"
+		problem.Status = http.StatusGatewayTimeout
+		problem.Detail = err.Error()
 	case errors.Is(err, domain.ErrNotFound):
 		problem.Type = problemBaseURL + "/not-found"
 		problem.Title = "Recurso no encontrado"
