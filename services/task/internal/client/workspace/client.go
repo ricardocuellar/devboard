@@ -1,12 +1,17 @@
 package workspace
 
 import (
+	"context"
 	"fmt"
 
 	workspacev1 "github.com/ricardocuellar/devboard/contracts/gen/go/devboard/workspace/v1"
+	"github.com/ricardocuellar/devboard/internal/domain"
+	"github.com/ricardocuellar/devboard/services/task/internal/usecase"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 )
 
 type Client struct {
@@ -35,4 +40,47 @@ func NewClient(target string) (*Client, error) {
 		connection: connection,
 		client:     workspacev1.NewWorkspaceServiceClient(connection),
 	}, nil
+}
+
+func (client *Client) ValidateProjectAccess(ctx context.Context, projectID string, userID string) (usecase.ProjectAccess, error) {
+	response, err := client.client.ValidateProjectAccess(ctx, &workspacev1.ValidateProjectAccessRequest{
+		ProjectId: projectID,
+		UserId:    userID,
+	})
+
+	if err != nil {
+		return usecase.ProjectAccess{}, mapError(err)
+	}
+
+	return usecase.ProjectAccess{
+		WorkpaceID: response.GetWorkspaceId(),
+	}, nil
+}
+
+func (client *Client) Close() error {
+	if err := client.connection.Close(); err != nil {
+		return fmt.Errorf("Error al cerrar conexión grpc: %w", err)
+	}
+
+	return nil
+}
+
+func mapError(err error) error {
+	code := status.Code(err)
+	switch code {
+	case codes.InvalidArgument:
+		return domain.ErrInvalidInput
+
+	case codes.NotFound:
+		return domain.ErrNotFound
+
+	case codes.PermissionDenied:
+		return domain.ErrForbidden
+
+	case codes.Unavailable:
+		return fmt.Errorf("Servicio de Workspace no disponible: %w", err)
+
+	default:
+		return fmt.Errorf("Servicio de Workspace gRPC falló: %w", err)
+	}
 }
