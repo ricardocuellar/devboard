@@ -9,13 +9,16 @@ import (
 	workspacev1 "github.com/ricardocuellar/devboard/contracts/gen/go/devboard/workspace/v1"
 
 	googlegrpc "google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthgrpc "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
 
 type Server struct {
-	server   *googlegrpc.Server
-	listener net.Listener
-	logger   *slog.Logger
+	server       *googlegrpc.Server
+	healthServer *health.Server
+	listener     net.Listener
+	logger       *slog.Logger
 }
 
 func NewServer(
@@ -41,14 +44,22 @@ func NewServer(
 		handler,
 	)
 
+	healthServer := health.NewServer()
+
+	healthgrpc.RegisterHealthServer(grpcServer, healthServer)
+
+	healthServer.SetServingStatus("", healthgrpc.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus(workspacev1.WorkspaceService_ServiceDesc.ServiceName, healthgrpc.HealthCheckResponse_SERVING)
+
 	reflection.Register(
 		grpcServer,
 	)
 
 	return &Server{
-		server:   grpcServer,
-		listener: listener,
-		logger:   logger,
+		server:       grpcServer,
+		healthServer: healthServer,
+		listener:     listener,
+		logger:       logger,
 	}, nil
 }
 
@@ -73,6 +84,8 @@ func (server *Server) Serve() error {
 
 func (server *Server) Shutdown(timeout time.Duration) {
 	done := make(chan struct{})
+
+	server.healthServer.Shutdown()
 
 	go func() {
 		server.server.GracefulStop()
