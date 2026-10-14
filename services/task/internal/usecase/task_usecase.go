@@ -76,8 +76,8 @@ func (uc *TaskUseCase) ListProjectTasks(ctx context.Context, projectID string, r
 }
 
 // AssignTask método para asignar tarea
-func (uc *TaskUseCase) AssignTask(ctx context.Context, taskID, userID string) (*domain.Task, error) {
-	task, err := uc.queries.GetByID(ctx, taskID)
+func (uc *TaskUseCase) AssignTask(ctx context.Context, taskID, userID, requesterID string) (*domain.Task, error) {
+	task, err := uc.GetTask(ctx, taskID, requesterID)
 	if err != nil {
 		return nil, fmt.Errorf("obteniendo tarea %s: %w", taskID, err)
 	}
@@ -87,7 +87,7 @@ func (uc *TaskUseCase) AssignTask(ctx context.Context, taskID, userID string) (*
 	}
 
 	if err := uc.commands.Update(ctx, task); err != nil {
-		return nil, fmt.Errorf("actualizando tarea: %w", err)
+		return nil, fmt.Errorf("actualizando tarea %s: %w", taskID, err)
 	}
 
 	return task, nil
@@ -98,6 +98,10 @@ func (uc *TaskUseCase) GetTask(ctx context.Context, id string, requesterID strin
 	task, err := uc.queries.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("obteniendo tarea %s: %w", id, err)
+	}
+
+	if requesterID == "" {
+		return nil, domain.ErrUnauthorized
 	}
 
 	_, err = uc.projectAccess.ValidateProjectAccess(ctx, task.ProjectID, requesterID)

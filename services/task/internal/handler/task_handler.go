@@ -237,9 +237,20 @@ func (h *TaskHandler) ListByProject(w http.ResponseWriter, r *http.Request) {
 // @Param request body	assignTaskRequest	true "ID del asignado"
 // @Success 200 {object} taskResponse
 // @Failure 400 {object} ProblemDetails
+// @Failure 401 {object} ProblemDetails
+// @Failure 403 {object} ProblemDetails
+// @Failure 503 {object} ProblemDetails
+// @Failure 504 {object} ProblemDetails
 // @Security BearerAuth
 // @Router /tasks/{id}/assign [put]
 func (h *TaskHandler) Assign(w http.ResponseWriter, r *http.Request) {
+
+	requesterID := middlewares.GetUserID(r)
+
+	if requesterID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
 	id := r.PathValue("id")
 
 	var req assignTaskRequest
@@ -260,7 +271,7 @@ func (h *TaskHandler) Assign(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := h.usercase.AssignTask(r.Context(), id, req.AssigneeID)
+	task, err := h.usercase.AssignTask(r.Context(), id, req.AssigneeID, requesterID)
 
 	if err != nil {
 		RespondError(w, r, h.logger, err)
