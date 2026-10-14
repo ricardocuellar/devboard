@@ -287,9 +287,20 @@ func (h *TaskHandler) Assign(w http.ResponseWriter, r *http.Request) {
 // @Param request body	updateStatusRequest	true "Nuevo estado"
 // @Success 200 {object} taskResponse
 // @Failure 400 {object} ProblemDetails
+// @Failure 401 {object} ProblemDetails
+// @Failure 403 {object} ProblemDetails
+// @Failure 503 {object} ProblemDetails
+// @Failure 504 {object} ProblemDetails
 // @Security BearerAuth
 // @Router /tasks/{id}/status [put]
 func (h *TaskHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	requesterID := middlewares.GetUserID(r)
+
+	if requesterID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
+
 	id := r.PathValue("id")
 
 	var req updateStatusRequest
@@ -310,7 +321,7 @@ func (h *TaskHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := h.usercase.UpdateTaskStatus(r.Context(), id, req.Status)
+	task, err := h.usercase.UpdateTaskStatus(r.Context(), id, req.Status, requesterID)
 
 	if err != nil {
 		RespondError(w, r, h.logger, err)
