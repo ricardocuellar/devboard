@@ -39,7 +39,7 @@ func RespondError(writer http.ResponseWriter, request *http.Request, logger *slo
 		problem.Title = "Recurso no disponible"
 		problem.Status = http.StatusServiceUnavailable
 		problem.Detail = err.Error()
-	case errors.Is(err, domain.ErrDepencyTimeout):
+	case errors.Is(err, domain.ErrDependencyTimeout):
 		problem.Type = problemBaseURL + "/not-found"
 		problem.Title = "Recurso tiempo de respuesta expirado"
 		problem.Status = http.StatusGatewayTimeout

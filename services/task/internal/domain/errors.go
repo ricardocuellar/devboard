@@ -17,6 +17,6 @@ var (
 	ErrInternal = errors.New("error interno")
 	//ErrDependencyUnavailable reutilizable
 	ErrDependencyUnavailable = errors.New("Dependencia no disponible")
-	//ErrDepencyTimeout reutilizable
-	ErrDepencyTimeout = errors.New("Tiempo excedido")
+	//ErrDependencyTimeout reutilizable
+	ErrDependencyTimeout = errors.New("Tiempo excedido")
 )

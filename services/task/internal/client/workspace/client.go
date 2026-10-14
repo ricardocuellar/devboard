@@ -7,7 +7,7 @@ import (
 	"time"
 
 	workspacev1 "github.com/ricardocuellar/devboard/contracts/gen/go/devboard/workspace/v1"
-	"github.com/ricardocuellar/devboard/internal/domain"
+	"github.com/ricardocuellar/devboard/services/task/internal/domain"
 	"github.com/ricardocuellar/devboard/services/task/internal/usecase"
 
 	"google.golang.org/grpc"
@@ -64,7 +64,7 @@ func (client *Client) ValidateProjectAccess(ctx context.Context, projectID strin
 
 	rpcCtx = metadata.AppendToOutgoingContext(rpcCtx, "x-caller-service", "task")
 
-	response, err := client.client.ValidateProjectAccess(ctx, &workspacev1.ValidateProjectAccessRequest{
+	response, err := client.client.ValidateProjectAccess(rpcCtx, &workspacev1.ValidateProjectAccessRequest{
 		ProjectId: projectID,
 		UserId:    userID,
 	})
@@ -94,6 +94,10 @@ func mapError(ctx context.Context, err error) error {
 
 	code := status.Code(err)
 	switch code {
+	case codes.DeadlineExceeded:
+		return domain.ErrDependencyTimeout
+	case codes.Unavailable:
+		return domain.ErrDependencyUnavailable
 	case codes.InvalidArgument:
 		return domain.ErrInvalidInput
 
@@ -102,9 +106,6 @@ func mapError(ctx context.Context, err error) error {
 
 	case codes.PermissionDenied:
 		return domain.ErrForbidden
-
-	case codes.Unavailable:
-		return fmt.Errorf("Servicio de Workspace no disponible: %w", err)
 
 	case codes.Canceled:
 		return context.Canceled
