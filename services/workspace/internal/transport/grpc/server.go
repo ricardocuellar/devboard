@@ -37,7 +37,11 @@ func NewServer(
 			)
 	}
 
-	grpcServer := googlegrpc.NewServer()
+	grpcServer := googlegrpc.NewServer(
+		googlegrpc.ChainUnaryInterceptor(
+			loggingUnaryServerInterceptor(logger),
+		),
+	)
 
 	workspacev1.RegisterWorkspaceServiceServer(
 		grpcServer,
