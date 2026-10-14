@@ -54,7 +54,18 @@ func (uc *TaskUseCase) CreateTask(ctx context.Context, projectID, title, descrip
 }
 
 // ListProjectTasks método para crear tarea
-func (uc *TaskUseCase) ListProjectTasks(ctx context.Context, projectID string) ([]*domain.Task, error) {
+func (uc *TaskUseCase) ListProjectTasks(ctx context.Context, projectID string, requesterID string) ([]*domain.Task, error) {
+
+	if requesterID == "" {
+		return nil, domain.ErrUnauthorized
+	}
+
+	_, err := uc.projectAccess.ValidateProjectAccess(ctx, projectID, requesterID)
+
+	if err != nil {
+		return nil, fmt.Errorf("Validando acceso al proyecto %s: %w", projectID, err)
+	}
+
 	tasks, err := uc.queries.ListByProject(ctx, projectID)
 
 	if err != nil {
