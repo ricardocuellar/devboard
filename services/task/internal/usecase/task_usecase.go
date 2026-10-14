@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/ricardocuellar/devboard/services/task/internal/domain"
@@ -76,13 +77,27 @@ func (uc *TaskUseCase) ListProjectTasks(ctx context.Context, projectID string, r
 }
 
 // AssignTask método para asignar tarea
-func (uc *TaskUseCase) AssignTask(ctx context.Context, taskID, userID, requesterID string) (*domain.Task, error) {
+func (uc *TaskUseCase) AssignTask(ctx context.Context, taskID, assigneeID, requesterID string) (*domain.Task, error) {
 	task, err := uc.GetTask(ctx, taskID, requesterID)
 	if err != nil {
 		return nil, fmt.Errorf("obteniendo tarea %s: %w", taskID, err)
 	}
 
-	if err := task.AssignTo(userID); err != nil {
+	if assigneeID == "" {
+		return nil, domain.ErrInvalidInput
+	}
+
+	_, err = uc.projectAccess.ValidateProjectAccess(ctx, task.ProjectID, assigneeID)
+
+	if err != nil {
+		if errors.Is(err, domain.ErrForbidden) {
+			return nil, fmt.Errorf("el usuario asignado debe pertenecer al workspace del proyecto: %w", domain.ErrInvalidInput)
+		}
+
+		return nil, fmt.Errorf("validando destinatario de la tarea %s: %w", taskID, err)
+	}
+
+	if err := task.AssignTo(assigneeID); err != nil {
 		return nil, err
 	}
 
