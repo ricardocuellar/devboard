@@ -83,10 +83,16 @@ func (uc *TaskUseCase) AssignTask(ctx context.Context, taskID, userID string) (*
 }
 
 // GetTask obtiene una tarea por ID
-func (uc *TaskUseCase) GetTask(ctx context.Context, id string) (*domain.Task, error) {
+func (uc *TaskUseCase) GetTask(ctx context.Context, id string, requesterID string) (*domain.Task, error) {
 	task, err := uc.queries.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("obteniendo tarea %s: %w", id, err)
+	}
+
+	_, err = uc.projectAccess.ValidateProjectAccess(ctx, task.ProjectID, requesterID)
+
+	if err != nil {
+		return nil, fmt.Errorf("Validando acceso a la tarea %s: %w", id, err)
 	}
 
 	return task, nil

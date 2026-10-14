@@ -145,11 +145,22 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Param id path	string	true "ID de la tarea"
 // @Success 200 {object} taskResponse
 // @Failure 404 {object} ProblemDetails
+// @Failure 401 {object} ProblemDetails
+// @Failure 403 {object} ProblemDetails
+// @Failure 503 {object} ProblemDetails
+// @Failure 504 {object} ProblemDetails
 // @Security BearerAuth
 // @Router /tasks/{id} [get]
 func (h *TaskHandler) Get(w http.ResponseWriter, r *http.Request) {
+
+	requesterID := middlewares.GetUserID(r)
+	if requesterID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
+
 	id := r.PathValue("id")
-	task, err := h.usercase.GetTask(r.Context(), id)
+	task, err := h.usercase.GetTask(r.Context(), id, requesterID)
 
 	if err != nil {
 		RespondError(w, r, h.logger, err)
