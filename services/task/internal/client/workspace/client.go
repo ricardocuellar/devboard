@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	workspacev1 "github.com/ricardocuellar/devboard/contracts/gen/go/devboard/workspace/v1"
@@ -13,7 +14,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -23,7 +23,7 @@ type Client struct {
 	timeout    time.Duration
 }
 
-func NewClient(target string, timeout time.Duration) (*Client, error) {
+func NewClient(target string, timeout time.Duration, logger *slog.Logger) (*Client, error) {
 
 	if timeout <= 0 {
 		return nil, fmt.Errorf("El timeout de GRPC Workspace debe ser positivo")
@@ -34,6 +34,10 @@ func NewClient(target string, timeout time.Duration) (*Client, error) {
 			target,
 			grpc.WithTransportCredentials(
 				insecure.NewCredentials(),
+			),
+			grpc.WithChainUnaryInterceptor(
+				callerServiceUnaryInterceptor("task"),
+				loggingUnaryClientInterceptor(logger),
 			),
 		)
 
@@ -61,8 +65,6 @@ func (client *Client) ValidateProjectAccess(ctx context.Context, projectID strin
 	rpcCtx, cancel := context.WithTimeout(ctx, client.timeout)
 
 	defer cancel()
-
-	rpcCtx = metadata.AppendToOutgoingContext(rpcCtx, "x-caller-service", "task")
 
 	response, err := client.client.ValidateProjectAccess(rpcCtx, &workspacev1.ValidateProjectAccessRequest{
 		ProjectId: projectID,
