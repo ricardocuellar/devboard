@@ -104,6 +104,10 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 //
 // @Summary     Listar comentarios
 // @Description Lista todos los comentarios de una tarea
+// @Failure 401 {object} ProblemDetails
+// @Failure 403 {object} ProblemDetails
+// @Failure 503 {object} ProblemDetails
+// @Failure 504 {object} ProblemDetails
 // @Tags        comments
 // @Produce     json
 // @Param       id  path     string true "ID de la tarea"
@@ -111,9 +115,16 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 // @Security    BearerAuth
 // @Router      /tasks/{id}/comments [get]
 func (h *CommentHandler) ListByTask(w http.ResponseWriter, r *http.Request) {
+	requesterID := middlewares.GetUserID(r)
+
+	if requesterID == "" {
+		RespondError(w, r, h.logger, domain.ErrUnauthorized)
+		return
+	}
+
 	taskID := r.PathValue("id")
 
-	comments, err := h.usecase.ListTaskComments(r.Context(), taskID)
+	comments, err := h.usecase.ListTaskComments(r.Context(), taskID, requesterID)
 
 	if err != nil {
 		RespondError(w, r, h.logger, err)
