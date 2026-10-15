@@ -9,7 +9,7 @@ import (
 
 // WorkspaceRepository define lo que WorkspaceUseCase necesita del repositorio
 type WorkspaceRepository interface {
-	CreateWorkspace(ctx context.Context, ws *domain.Workspace) error
+	CreateWorkspaceWithMember(ctx context.Context, ws *domain.Workspace, member *domain.WorkspaceMember) error
 	GetWorkspaceByID(ctx context.Context, id string) (*domain.Workspace, error)
 	GetWorkspaceBySlug(ctx context.Context, slug string) (*domain.Workspace, error)
 	ListWorkspacesByUser(ctx context.Context, userID string) ([]*domain.Workspace, error)
@@ -31,23 +31,12 @@ func NewWorkspaceUseCase(repo WorkspaceRepository) *WorkspaceUseCase {
 
 // CreateWorkspace crea un workspace y agrega al creador como admin
 func (uc *WorkspaceUseCase) CreateWorkspace(ctx context.Context, name, description, createdBy string) (*domain.Workspace, error) {
-	slug := domain.GenerateSlug(name)
-	existing, err := uc.repo.GetWorkspaceBySlug(ctx, slug)
-
-	if err == nil && existing != nil {
-		return nil, fmt.Errorf("workspace con slug %q: %w", slug, domain.ErrAlreadyExists)
-	}
 
 	ws := domain.NewWorkspace(name, description, createdBy)
-
-	if err := uc.repo.CreateWorkspace(ctx, ws); err != nil {
-		return nil, fmt.Errorf("creando workspace: %w", err)
-	}
-
 	member := domain.NewWorkspaceMember(ws.ID, createdBy, domain.WorkspaceRoleAdmin)
 
-	if err := uc.repo.AddMember(ctx, member); err != nil {
-		return nil, fmt.Errorf("agregando creador como admin: %w", err)
+	if err := uc.repo.CreateWorkspaceWithMember(ctx, ws, member); err != nil {
+		return nil, fmt.Errorf("creando workspace con administrador: %w", err)
 	}
 
 	return ws, nil

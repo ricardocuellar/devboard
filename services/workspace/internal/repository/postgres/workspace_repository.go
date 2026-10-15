@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/ricardocuellar/devboard/services/workspace/internal/domain"
@@ -27,13 +28,29 @@ func NewWorkspaceRepository(pool *pgxpool.Pool) *WorkspaceRepository {
 }
 
 // CreateWorkspace guarda un workspace en PostgreSQL
-func (r *WorkspaceRepository) CreateWorkspace(ctx context.Context, ws *domain.Workspace) error {
-	var createdBy pgtype.UUID
+func (r *WorkspaceRepository) CreateWorkspaceWithMember(ctx context.Context, ws *domain.Workspace, member *domain.WorkspaceMember) error {
+	var createdBy, userID pgtype.UUID
 	if err := createdBy.Scan(ws.CreatedBy); err != nil {
 		return fmt.Errorf("created_by inválido: %w", domain.ErrInvalidInput)
 	}
 
-	result, err := r.queries.CreateWorkspace(ctx, generated.CreateWorkspaceParams{
+	if err := userID.Scan(member.UserID); err != nil {
+		return fmt.Errorf("user_id inválido: %w", domain.ErrInvalidInput)
+	}
+
+	tx, err := r.pool.Begin(ctx)
+
+	if err != nil {
+		return fmt.Errorf("iniciando transacción: %w", err)
+	}
+
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := r.queries.WithTx(tx)
+
+	workspaceRow, err := queries.CreateWorkspace(ctx, generated.CreateWorkspaceParams{
 		Name:        ws.Name,
 		Slug:        ws.Slug,
 		Description: ws.Description,
@@ -41,12 +58,36 @@ func (r *WorkspaceRepository) CreateWorkspace(ctx context.Context, ws *domain.Wo
 	})
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "workspace_slug_key" {
+			return fmt.Errorf("workspace con slug %q: %w", ws.Slug, domain.ErrAlreadyExists)
+		}
+
 		return fmt.Errorf("insertando workspace en BD: %w", err)
 	}
 
-	ws.ID = result.ID.String()
-	ws.CreatedAt = result.CreatedAt.Time
-	ws.UpdatedAt = result.UpdatedAt.Time
+	memberRow, err := queries.AddWorkspaceMember(ctx, generated.AddWorkspaceMemberParams{
+		WorkspaceID: workspaceRow.ID,
+		UserID:      userID,
+		Role:        string(member.Role),
+	})
+
+	if err != nil {
+		return fmt.Errorf("insertando miembro inicial: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("confimando creación del workspace: %w", err)
+	}
+
+	ws.ID = workspaceRow.ID.String()
+	ws.CreatedAt = workspaceRow.CreatedAt.Time
+	ws.UpdatedAt = workspaceRow.UpdatedAt.Time
+
+	member.ID = memberRow.ID.String()
+	member.WorkspaceID = memberRow.ID.String()
+	member.JoinedAt = memberRow.JoinedAt.Time
 
 	return nil
 }
