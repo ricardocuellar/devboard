@@ -52,6 +52,10 @@ func toCommentResponse(c *domain.Comment) commentResponse {
 //
 // @Summary     Crear comentario
 // @Description Agrega un comentario a una tarea
+// @Failure 401 {object} ProblemDetails
+// @Failure 403 {object} ProblemDetails
+// @Failure 503 {object} ProblemDetails
+// @Failure 504 {object} ProblemDetails
 // @Tags        comments
 // @Accept      json
 // @Produce     json

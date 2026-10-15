@@ -79,7 +79,7 @@ func run() error {
 	// Use cases
 	taskUseCase := usecase.NewTaskUseCase(taskRepository, taskRepository, workspaceGRPCClient)
 
-	commentUseCase := usecase.NewCommentUseCase(commentRepository, taskRepository)
+	commentUseCase := usecase.NewCommentUseCase(commentRepository, taskUseCase)
 
 	validate := validator.New()
 

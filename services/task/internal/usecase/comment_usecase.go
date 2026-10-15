@@ -16,28 +16,37 @@ type CommentRepository interface {
 	Delete(ctx context.Context, id string) error
 }
 
+type AuthorizedTaskReader interface {
+	GetTask(ctx context.Context, taskID string, requesterID string) (*domain.Task, error)
+}
+
 // CommentUseCase orquesta las operaciones de comentarios
 type CommentUseCase struct {
 	commentRepo CommentRepository
-	taskQuery   TaskQueryRepository
+	taskAccess  AuthorizedTaskReader
 }
 
 // NewCommentUseCase constructor
-func NewCommentUseCase(commentRepo CommentRepository, taskQuery TaskQueryRepository) *CommentUseCase {
+func NewCommentUseCase(commentRepo CommentRepository, taskAccess AuthorizedTaskReader) *CommentUseCase {
 	return &CommentUseCase{
 		commentRepo: commentRepo,
-		taskQuery:   taskQuery,
+		taskAccess:  taskAccess,
 	}
 }
 
 // CreateComment agrega un comentario a una tarea.
 func (uc *CommentUseCase) CreateComment(ctx context.Context, taskID, authorID, content string) (*domain.Comment, error) {
-	_, err := uc.taskQuery.GetByID(ctx, taskID)
+
+	if authorID == "" {
+		return nil, domain.ErrUnauthorized
+	}
+
+	task, err := uc.taskAccess.GetTask(ctx, taskID, authorID)
 	if err != nil {
 		return nil, fmt.Errorf("tarea no encontrada: %w", err)
 	}
 
-	comment, err := domain.NewComment(taskID, authorID, content)
+	comment, err := domain.NewComment(task.ID, authorID, content)
 
 	if err != nil {
 		return nil, fmt.Errorf("creando comentario: %w", err)
