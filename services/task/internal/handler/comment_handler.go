@@ -153,6 +153,10 @@ func (h *CommentHandler) ListByTask(w http.ResponseWriter, r *http.Request) {
 // @Param       id path string true "ID del comentario"
 // @Success     204 "Sin contenido"
 // @Failure     403 {object} ProblemDetails
+// @Failure 	401 {object} ProblemDetails
+// @Failure 	403 {object} ProblemDetails
+// @Failure 	503 {object} ProblemDetails
+// @Failure 	504 {object} ProblemDetails
 // @Security    BearerAuth
 // @Router      /comments/{id} [delete]
 func (h *CommentHandler) Delete(w http.ResponseWriter, r *http.Request) {

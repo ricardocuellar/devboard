@@ -83,9 +83,20 @@ func (uc *CommentUseCase) ListTaskComments(ctx context.Context, taskID string, r
 
 // DeleteComment elimina un comentario.
 func (uc *CommentUseCase) DeleteComment(ctx context.Context, commentID, requesterID string) error {
+
+	if requesterID == "" {
+		return domain.ErrUnauthorized
+	}
+
 	comment, err := uc.commentRepo.GetByID(ctx, commentID)
 	if err != nil {
 		return fmt.Errorf("obteniendo comentario: %w", err)
+	}
+
+	_, err = uc.taskAccess.GetTask(ctx, comment.TaskID, requesterID)
+
+	if err != nil {
+		return fmt.Errorf("validando acceso a la tarea del comentario: %w", err)
 	}
 
 	if comment.AuthorID != requesterID {
