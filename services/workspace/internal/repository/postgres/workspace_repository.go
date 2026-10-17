@@ -180,10 +180,10 @@ func (r *WorkspaceRepository) GetMember(ctx context.Context, workspaceID, userID
 	var pgWsID, pgUserID pgtype.UUID
 
 	if err := pgWsID.Scan(workspaceID); err != nil {
-		return nil, fmt.Errorf("workspace_id inválido: %w", domain.ErrNotFound)
+		return nil, fmt.Errorf("workspace_id inválido: %w", domain.ErrInvalidInput)
 	}
 	if err := pgUserID.Scan(userID); err != nil {
-		return nil, fmt.Errorf("user_id inválido: %w", domain.ErrNotFound)
+		return nil, fmt.Errorf("user_id inválido: %w", domain.ErrInvalidInput)
 	}
 
 	result, err := r.queries.GetWorkspaceMember(ctx, generated.GetWorkspaceMemberParams{
