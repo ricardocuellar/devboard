@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ricardocuellar/devboard/services/gateway/internal/config"
+	"github.com/ricardocuellar/devboard/services/gateway/internal/proxy"
 )
 
 func main() {
@@ -34,6 +35,10 @@ func run(logger *slog.Logger) error {
 	}
 
 	mux := http.NewServeMux()
+
+	identityProxy := proxy.New(cfg.IdentityURL, logger)
+
+	mux.Handle("/api/v1/auth/", identityProxy)
 
 	mux.HandleFunc(
 		"GET /health",
