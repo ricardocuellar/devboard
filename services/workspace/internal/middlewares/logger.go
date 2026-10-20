@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/ricardocuellar/devboard/services/workspace/internal/requestid"
 )
 
 type responseRecorder struct {
@@ -40,6 +42,13 @@ func Logger(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 
+			ctx := requestid.WithContext(request.Context(), request.Header.Get("X-Request-ID"))
+
+			request = request.WithContext(ctx)
+
+			id := requestid.FromContext(ctx)
+			writer.Header().Set("X-Request-ID", id)
+
 			start := time.Now()
 			rec := newResponseRecorder(writer)
 
@@ -48,6 +57,7 @@ func Logger(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			//log estructurado
 			logger.InfoContext(request.Context(), "request completado",
+				slog.String("request_id", id),
 				slog.String("method", request.Method),
 				slog.String("path", request.URL.Path),
 				slog.Int("status", rec.statusCode),

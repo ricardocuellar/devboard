@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/ricardocuellar/devboard/services/task/internal/requestid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -20,7 +21,20 @@ func callerServiceUnaryInterceptor(serviceName string) grpc.UnaryClientIntercept
 		invoker grpc.UnaryInvoker,
 		opts ...grpc.CallOption,
 	) error {
-		ctx = metadata.AppendToOutgoingContext(ctx, "x-caller-service", serviceName)
+
+		md := metadata.MD{}
+
+		if existing, ok := metadata.FromOutgoingContext(ctx); ok {
+			md = existing.Copy()
+		}
+
+		md.Set("x-caller-service", serviceName)
+
+		if id := requestid.FromContext(ctx); id != "" {
+			md.Set("x-request-id", id)
+		}
+
+		ctx = metadata.NewOutgoingContext(ctx, md)
 
 		return invoker(
 			ctx,
@@ -60,6 +74,7 @@ func loggingUnaryClientInterceptor(logger *slog.Logger) grpc.UnaryClientIntercep
 		logger.InfoContext(
 			ctx,
 			"grpc client call completed",
+			slog.String("request_id", requestid.FromContext(ctx)),
 			slog.String("method", method),
 			slog.String("status", code.String()),
 			slog.Duration("duration", duration),

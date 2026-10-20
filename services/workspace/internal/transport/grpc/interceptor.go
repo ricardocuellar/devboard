@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/ricardocuellar/devboard/services/workspace/internal/requestid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -20,6 +21,17 @@ func loggingUnaryServerInterceptor(logger *slog.Logger) grpc.UnaryServerIntercep
 		any,
 		error,
 	) {
+
+		md, _ := metadata.FromIncomingContext(ctx)
+
+		var id string
+
+		if values := md.Get("x-request-id"); len(values) > 0 {
+			id = values[0]
+		}
+
+		ctx = requestid.WithContext(ctx, id)
+
 		start := time.Now()
 
 		callerService := callerServiceFromContext(ctx)
@@ -30,7 +42,9 @@ func loggingUnaryServerInterceptor(logger *slog.Logger) grpc.UnaryServerIntercep
 
 		code := status.Code(err)
 
-		logger.InfoContext(ctx, "grpc server call completed", slog.String("method", info.FullMethod),
+		logger.InfoContext(ctx, "grpc server call completed",
+			slog.String("request_id", requestid.FromContext(ctx)),
+			slog.String("method", info.FullMethod),
 			slog.String(
 				"caller_service",
 				callerService,
