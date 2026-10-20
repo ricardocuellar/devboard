@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -77,10 +76,5 @@ func run(logger *slog.Logger) error {
 		slog.String("task_url", cfg.TaskURL.String()),
 	)
 
-	if err := server.ListenAndServe(); err != nil &&
-		!errors.Is(err, http.ErrServerClosed) {
-		return fmt.Errorf("ejecutando servidor HTTP: %w", err)
-	}
-
-	return nil
+	return serve(server, logger)
 }
