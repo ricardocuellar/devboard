@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ricardocuellar/devboard/services/gateway/internal/config"
+	"github.com/ricardocuellar/devboard/services/gateway/internal/middlewares"
 	"github.com/ricardocuellar/devboard/services/gateway/internal/router"
 )
 
@@ -63,7 +64,7 @@ func run(logger *slog.Logger) error {
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           mux,
+		Handler:           middlewares.RequestID(logger)(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}

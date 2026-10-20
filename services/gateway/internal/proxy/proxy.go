@@ -67,6 +67,7 @@ func New(
 				request.Context(),
 				"fallo comunicando con servicio de destino",
 				slog.String("upstream", target.Host),
+				slog.String("request_id", request.Header.Get("X-Request-ID")),
 				slog.String("method", request.Method),
 				slog.String("path", request.URL.Path),
 				slog.Int("status", problem.Status),
