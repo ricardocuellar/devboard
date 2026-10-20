@@ -6,13 +6,15 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 )
 
 type Config struct {
-	HTTPAddr     string
-	IdentityURL  *url.URL
-	WorkspaceURL *url.URL
-	TaskURL      *url.URL
+	HTTPAddr              string
+	IdentityURL           *url.URL
+	WorkspaceURL          *url.URL
+	TaskURL               *url.URL
+	ResponseHeaderTimeout time.Duration
 }
 
 func Load() (Config, error) {
@@ -57,6 +59,25 @@ func Load() (Config, error) {
 	)
 	if err != nil {
 		return Config{}, err
+	}
+
+	timeoutValue := envOrDefault(
+		"GATEWAY_RESPONSE_HEADER_TIMEOUT",
+		"5s",
+	)
+
+	cfg.ResponseHeaderTimeout, err = time.ParseDuration(timeoutValue)
+	if err != nil {
+		return Config{}, fmt.Errorf(
+			"GATEWAY_RESPONSE_HEADER_TIMEOUT inválido: %w",
+			err,
+		)
+	}
+
+	if cfg.ResponseHeaderTimeout <= 0 {
+		return Config{}, fmt.Errorf(
+			"GATEWAY_RESPONSE_HEADER_TIMEOUT debe ser mayor que cero",
+		)
 	}
 
 	return cfg, nil

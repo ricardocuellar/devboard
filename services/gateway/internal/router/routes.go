@@ -13,9 +13,9 @@ func Register(
 	cfg config.Config,
 	logger *slog.Logger,
 ) {
-	identityProxy := proxy.New(cfg.IdentityURL, logger)
-	workspaceProxy := proxy.New(cfg.WorkspaceURL, logger)
-	taskProxy := proxy.New(cfg.TaskURL, logger)
+	identityProxy := proxy.New(cfg.IdentityURL, cfg.ResponseHeaderTimeout, logger)
+	workspaceProxy := proxy.New(cfg.WorkspaceURL, cfg.ResponseHeaderTimeout, logger)
+	taskProxy := proxy.New(cfg.TaskURL, cfg.ResponseHeaderTimeout, logger)
 
 	// Identity.
 	mux.Handle("/api/v1/auth/", identityProxy)

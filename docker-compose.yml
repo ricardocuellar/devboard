@@ -246,6 +246,7 @@ services:
       IDENTITY_HTTP_URL: "http://identity:8081"
       WORKSPACE_HTTP_URL: "http://workspace:8082"
       TASK_HTTP_URL: "http://task:8083"
+      GATEWAY_RESPONSE_HEADER_TIMEOUT: "5s"
     ports:
       - "8080:8080"
     healthcheck:
