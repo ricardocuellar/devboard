@@ -1,0 +1,33 @@
+usage: nats [<flags>] <command> [<args> ...]
+
+NATS Utility
+
+NATS Server and JetStream administration.
+
+See 'nats cheat' for a quick cheatsheet of commands
+
+Commands:
+  account    Account information and status
+  audit      Audit a NATS deployment
+  auth       NATS Decentralized Authentication
+  bench      Benchmark utility
+  consumer   JetStream Consumer management
+  context    Manage nats configuration contexts
+  errors     Error code documentation
+  events     Show Advisories and Events
+  kv         Interacts with a JetStream based Key-Value store
+  latency    Perform latency tests between two NATS servers
+  object     Interacts with a JetStream based Object store
+  publish    Generic data publish utility
+  request    Generic request-reply request utility
+  reply      Generic service reply utility
+  rtt        Compute round-trip time to NATS server
+  schema     Schema tools
+  server     Server information
+  service    Services discovery and management
+  stream     JetStream Stream management
+  subscribe  Generic subscription client
+  top        Shows top-like statistic for connections on a specific server
+  trace      Trace message delivery within an NATS network
+
+Pass --help to see global flags applicable to this command.
