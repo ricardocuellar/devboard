@@ -17,6 +17,17 @@ type Comment struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type OutboxEvent struct {
+	EventID       string             `json:"event_id"`
+	Subject       string             `json:"subject"`
+	Payload       []byte             `json:"payload"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	PublishedAt   pgtype.Timestamptz `json:"published_at"`
+	Attempts      int32              `json:"attempts"`
+	NextAttemptAt pgtype.Timestamptz `json:"next_attempt_at"`
+	LastError     string             `json:"last_error"`
+}
+
 type Task struct {
 	ID          pgtype.UUID        `json:"id"`
 	ProjectID   pgtype.UUID        `json:"project_id"`
