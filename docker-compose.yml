@@ -300,6 +300,33 @@ services:
       - ./configs/nats:/config:ro
     networks:
       - messaging
+
+  # Outbox task
+  task-outbox:
+    build:
+      context: .
+      dockerfile: services/task/Dockerfile
+    container_name: devboard_task_outbox
+    entrypoint: "/app/outbox"
+    environment:
+      TASK_DATABASE_URL: >-
+        postgresql://task:task@task-postgres:5432/task?sslmode=disable
+      NATS_URL: "nats://nats:4222"
+    depends_on:
+      task-postgres:
+        condition: service_healthy
+
+      task-migrate:
+        condition: service_completed_successfully
+
+      nats:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 10s
+    networks:
+      - task-data
+      - messaging
+
   # Legacy Database
   postgres:
     image: postgres:16-alpine

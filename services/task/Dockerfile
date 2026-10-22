@@ -26,6 +26,14 @@ RUN CGO_ENABLED=0 \
     -o /out/service \
     ./cmd/api
 
+RUN CGO_ENABLED=0 \
+    GOOS=linux \
+    go build \
+    -trimpath \
+    -ldflags="-s -w" \
+    -o /out/outbox \
+    ./cmd/outbox    
+
 
 FROM alpine:3.24
 
@@ -40,6 +48,11 @@ WORKDIR /app
 COPY --from=builder \
     /out/service \
     /app/service
+
+COPY --from=builder \
+    /out/outbox \
+    /app/outbox
+
 
 USER app
 
