@@ -60,7 +60,7 @@ func (r *WorkspaceRepository) CreateWorkspaceWithMember(ctx context.Context, ws 
 	if err != nil {
 		var pgErr *pgconn.PgError
 
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "workspace_slug_key" {
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "workspaces_slug_key" {
 			return fmt.Errorf("workspace con slug %q: %w", ws.Slug, domain.ErrAlreadyExists)
 		}
 
@@ -86,7 +86,7 @@ func (r *WorkspaceRepository) CreateWorkspaceWithMember(ctx context.Context, ws 
 	ws.UpdatedAt = workspaceRow.UpdatedAt.Time
 
 	member.ID = memberRow.ID.String()
-	member.WorkspaceID = memberRow.ID.String()
+	member.WorkspaceID = workspaceRow.ID.String()
 	member.JoinedAt = memberRow.JoinedAt.Time
 
 	return nil

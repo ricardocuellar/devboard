@@ -2,14 +2,17 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	taskv1 "github.com/ricardocuellar/devboard/contracts/events/task/v1"
 	"github.com/ricardocuellar/devboard/services/task/internal/domain"
 	generated "github.com/ricardocuellar/devboard/services/task/internal/repository/postgres/generated"
+	"github.com/ricardocuellar/devboard/services/task/internal/requestid"
 )
 
 // TaskRepository implementa usecaseTaskCommandRepository y usecase.TaskQueryRepository
@@ -27,10 +30,13 @@ func NewTaskRepository(pool *pgxpool.Pool) *TaskRepository {
 }
 
 // Create guarda una nueva tarea en PostgreSQL
-func (r *TaskRepository) Create(ctx context.Context, task *domain.Task) error {
+func (r *TaskRepository) CreateWithEvent(ctx context.Context, task *domain.Task) error {
 	var projectID pgtype.UUID
 	if err := projectID.Scan(task.ProjectID); err != nil {
-		return fmt.Errorf("project_id inválido: %w", domain.ErrInvalidInput)
+		return fmt.Errorf(
+			"project_id inválido: %w",
+			domain.ErrInvalidInput,
+		)
 	}
 
 	var createdBy pgtype.UUID
@@ -38,24 +44,67 @@ func (r *TaskRepository) Create(ctx context.Context, task *domain.Task) error {
 		return fmt.Errorf("created_by inválido: %w", domain.ErrInvalidInput)
 	}
 
-	result, err := r.queries.CreateTask(ctx, generated.CreateTaskParams{
-		ProjectID:   projectID,
-		Title:       task.Title,
-		Description: task.Description,
-		Status:      string(task.Status),
-		CreatedBy:   createdBy,
-	})
-
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("instertando tarea en BD: %w", err)
+		return fmt.Errorf("iniciando transacción de tarea: %w", err)
 	}
 
-	task.ID = result.ID.String()
-	task.CreatedAt = result.CreatedAt.Time
-	task.UpdatedAt = result.UpdatedAt.Time
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	queries := r.queries.WithTx(tx)
+
+	row, err := queries.CreateTask(
+		ctx,
+		generated.CreateTaskParams{
+			ProjectID:   projectID,
+			Title:       task.Title,
+			Description: task.Description,
+			Status:      string(task.Status),
+			CreatedBy:   createdBy,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("insertando tarea: %w", err)
+	}
+
+	event := taskv1.NewTaskCreated(
+		taskv1.TaskCreatedData{
+			TaskID:    row.ID.String(),
+			ProjectID: row.ProjectID.String(),
+			CreatedBy: row.CreatedBy.String(),
+			Title:     row.Title,
+		},
+		row.CreatedAt.Time,
+		requestid.FromContext(ctx),
+	)
+
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("serializando TaskCreated: %w", err)
+	}
+
+	if err := queries.InsertOutboxEvent(
+		ctx,
+		generated.InsertOutboxEventParams{
+			EventID: event.EventID,
+			Subject: taskv1.TaskCreatedSubject,
+			Payload: payload,
+		},
+	); err != nil {
+		return fmt.Errorf("guardando TaskCreated en Outbox: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("confirmando tarea y evento: %w", err)
+	}
+
+	task.ID = row.ID.String()
+	task.CreatedAt = row.CreatedAt.Time
+	task.UpdatedAt = row.UpdatedAt.Time
 
 	return nil
-
 }
 
 // Update actualiza una tarea existente

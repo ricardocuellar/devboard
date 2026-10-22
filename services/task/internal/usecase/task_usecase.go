@@ -10,7 +10,7 @@ import (
 
 // TaskCommandRepository interface CQRS
 type TaskCommandRepository interface {
-	Create(ctx context.Context, task *domain.Task) error
+	CreateWithEvent(ctx context.Context, task *domain.Task) error
 	Update(ctx context.Context, task *domain.Task) error
 }
 
@@ -47,7 +47,7 @@ func (uc *TaskUseCase) CreateTask(ctx context.Context, projectID, title, descrip
 
 	task := domain.NewTask(projectID, title, description, createdBy)
 
-	if err := uc.commands.Create(ctx, task); err != nil {
+	if err := uc.commands.CreateWithEvent(ctx, task); err != nil {
 		return nil, fmt.Errorf("creando tarea: %w", err)
 	}
 
