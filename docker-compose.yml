@@ -235,6 +235,47 @@ services:
       - app
       - task-data
 
+  # ====
+  # Notification
+  notification-postgres:
+    image: postgres:16-alpine
+    container_name: devboard_notification_postgres
+    environment:
+      POSTGRES_USER: notification
+      POSTGRES_PASSWORD: notification
+      POSTGRES_DB: notification
+    ports:
+      - "127.0.0.1:5436:5432"
+    volumes:
+      - notification_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "pg_isready -U notification -d notification"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - notification-data
+
+  notification-migrate:
+    image: migrate/migrate:v4.19.1
+    container_name: devboard_notification_migrate
+    volumes:
+      - ./services/notification/migrations:/migrations:ro
+    command:
+      - "-path=/migrations"
+      - "-database=postgresql://notification:notification@notification-postgres:5432/notification?sslmode=disable"
+      - "up"
+    depends_on:
+      notification-postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - notification-data
+
   # Gateway
   gateway:
     build:
@@ -354,6 +395,7 @@ volumes:
   identity_postgres_data:
   workspace_postgres_data:
   task_postgres_data:
+  notification_postgres_data:
   redis_data:
   nats_data:
 
@@ -367,6 +409,9 @@ networks:
     internal: true
 
   task-data:
+    internal: true
+
+  notification-data:
     internal: true
 
   legacy-data:
