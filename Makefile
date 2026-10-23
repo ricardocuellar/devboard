@@ -16,6 +16,10 @@ TASK_PATH=./services/task
 TASK_MAIN_PATH=$(TASK_PATH)/cmd/api
 TASK_DB_URL=postgresql://task:task@localhost:5435/task?sslmode=disable
 TASK_MIGRATE_PATH=${TASK_PATH}/migrations
+NOTIFICATION_PATH=./services/notification
+NOTIFICATION_MAIN_PATH=$(NOTIFICATION_PATH)/cmd/api
+NOTIFICATION_DB_URL=postgresql://notification:notification@localhost:5435/notification?sslmode=disable
+NOTIFICATION_MIGRATE_PATH=${NOTIFICATION_PATH}/migrations
 CONTRACTS_PATH=./contracts
 
 .PHONY: run build test lint migrate-up migrate-down generate tidy help docs run-identity identity-generate identity-migrate-create identity-migrate-up identity-migrate-down run-workspace workspace-generate run-task task-generate task-migrate-create task-migrate-up task-migrate-down compose-build compose-up compose-down compose-ps compose-logs compose-config proto-format proto-lint proto-build proto-generate proto-check
@@ -150,6 +154,18 @@ task-migrate-up:
 ## task-migrate-down: revertir la última migración de task
 task-migrate-down:
 	migrate -path $(TASK_MIGRATE_PATH) -database "$(TASK_DB_URL)" down 1
+
+## notification-migrate-create: crea una nueva migración de notification (OJO para usarlo su uso es: make migrate-create name=create_users)
+notification-migrate-create:
+	migrate create -ext sql -dir $(NOTIFICATION_MIGRATE_PATH) -seq $(name)
+
+## notification-migrate-up: aplicar todas las migraciones pendientes para notification
+notification-migrate-up:
+	migrate -path $(NOTIFICATION_MIGRATE_PATH) -database "$(NOTIFICATION_DB_URL)" up
+
+## notification-migrate-down: revertir la última migración de notification
+notification-migrate-down:
+	migrate -path $(NOTIFICATION_MIGRATE_PATH) -database "$(NOTIFICATION_DB_URL)" down 1
 
 
 ## compose-build: Construir contendores
