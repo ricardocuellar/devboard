@@ -5,6 +5,7 @@ use (
 	./contracts
 	./services/gateway
 	./services/identity
+	./services/notification
 	./services/task
 	./services/workspace
 )
