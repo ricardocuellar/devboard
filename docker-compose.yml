@@ -298,6 +298,36 @@ services:
       - notification-data
       - messaging
 
+  notification:
+    build:
+      context: .
+      dockerfile: services/notification/Dockerfile
+    container_name: devboard_notification
+    environment:
+      TASK_HTTP_ADDR: ":8084"
+      TASK_DATABASE_URL: >-
+        postgresql://notification:notification@notification-postgres:5432/notification?sslmode=disable
+      JWT_SECRET: "${JWT_SECRET}"
+    ports:
+      - "127.0.0.1:8084:8084"
+    depends_on:
+      notification-postgres:
+        condition: service_healthy
+
+      notification-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8084/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    stop_grace_period: 15s
+    networks:
+      - app
+      - notification-data
+
   # Gateway
   gateway:
     build:
