@@ -14,6 +14,7 @@ type Config struct {
 	IdentityURL           *url.URL
 	WorkspaceURL          *url.URL
 	TaskURL               *url.URL
+	NotificationURL       *url.URL
 	ResponseHeaderTimeout time.Duration
 }
 
@@ -56,6 +57,14 @@ func Load() (Config, error) {
 	cfg.TaskURL, err = loadServiceURL(
 		"TASK_HTTP_URL",
 		"http://localhost:8083",
+	)
+	if err != nil {
+		return Config{}, err
+	}
+
+	cfg.NotificationURL, err = loadServiceURL(
+		"NOTIFICATION_HTTP_URL",
+		"http://localhost:8084",
 	)
 	if err != nil {
 		return Config{}, err

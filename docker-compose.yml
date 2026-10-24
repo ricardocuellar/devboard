@@ -303,9 +303,10 @@ services:
       context: .
       dockerfile: services/notification/Dockerfile
     container_name: devboard_notification
+    entrypoint: "/app/api"
     environment:
-      TASK_HTTP_ADDR: ":8084"
-      TASK_DATABASE_URL: >-
+      NOTIFICATION_HTTP_ADDR: ":8084"
+      NOTIFICATION_DATABASE_URL: >-
         postgresql://notification:notification@notification-postgres:5432/notification?sslmode=disable
       JWT_SECRET: "${JWT_SECRET}"
     ports:
@@ -339,6 +340,7 @@ services:
       IDENTITY_HTTP_URL: "http://identity:8081"
       WORKSPACE_HTTP_URL: "http://workspace:8082"
       TASK_HTTP_URL: "http://task:8083"
+      NOTIFICATION_HTTP_URL: "http://notification:8084"
       GATEWAY_RESPONSE_HEADER_TIMEOUT: "5s"
     ports:
       - "8080:8080"

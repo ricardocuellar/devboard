@@ -16,6 +16,7 @@ func Register(
 	identityProxy := proxy.New(cfg.IdentityURL, cfg.ResponseHeaderTimeout, logger)
 	workspaceProxy := proxy.New(cfg.WorkspaceURL, cfg.ResponseHeaderTimeout, logger)
 	taskProxy := proxy.New(cfg.TaskURL, cfg.ResponseHeaderTimeout, logger)
+	notificationProxy := proxy.New(cfg.NotificationURL, cfg.ResponseHeaderTimeout, logger)
 
 	// Identity.
 	mux.Handle("/api/v1/auth/", identityProxy)
@@ -36,4 +37,7 @@ func Register(
 	mux.Handle("/api/v1/tasks/", taskProxy)
 	mux.Handle("/api/v1/comments", taskProxy)
 	mux.Handle("/api/v1/comments/", taskProxy)
+
+	// Notification
+	mux.Handle("/api/v1/notifications", notificationProxy)
 }
