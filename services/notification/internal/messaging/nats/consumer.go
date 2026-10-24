@@ -15,6 +15,8 @@ import (
 	"github.com/ricardocuellar/devboard/services/notification/internal/domain"
 )
 
+const maxDeliveries = 5
+
 type TaskCreatedHandler interface {
 	Handle(
 		ctx context.Context,
@@ -45,7 +47,7 @@ func Run(
 			AckPolicy:     jetstream.AckExplicitPolicy,
 			AckWait:       15 * time.Second,
 			MaxAckPending: 1,
-			MaxDeliver:    -1,
+			MaxDeliver:    maxDeliveries,
 		},
 	)
 	cancel()
@@ -144,6 +146,29 @@ func retryMessage(
 	eventID string,
 ) {
 	if ctx.Err() != nil {
+		return
+	}
+
+	metadata, err := message.Metadata()
+	if err != nil {
+		logger.ErrorContext(
+			ctx,
+			"no se pudieron obtener los metadatos de entrega",
+			slog.String("event_id", eventID),
+			slog.Any("error", err),
+		)
+	} else if metadata.NumDelivered >= uint64(maxDeliveries) {
+		logger.ErrorContext(
+			ctx,
+			"evento sin procesar en la última entrega permitida; requiere revisión manual",
+			slog.String("event_id", eventID),
+			slog.String("stream", metadata.Stream),
+			slog.String("consumer", metadata.Consumer),
+			slog.Uint64("stream_sequence", metadata.Sequence.Stream),
+			slog.Uint64("deliveries", metadata.NumDelivered),
+			slog.Any("error", processErr),
+		)
+
 		return
 	}
 
