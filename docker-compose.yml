@@ -276,6 +276,28 @@ services:
     networks:
       - notification-data
 
+  notification-consumer:
+    build:
+      context: .
+      dockerfile: services/notification/Dockerfile
+    container_name: devboard_notification_consumer
+    environment:
+      NOTIFICATION_DATABASE_URL: >-
+        postgresql://notification:notification@notification-postgres:5432/notification?sslmode=disable
+      NATS_URL: "nats://nats:4222"
+    depends_on:
+      notification-postgres:
+        condition: service_healthy
+      notification-migrate:
+        condition: service_completed_successfully
+      nats:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 10s
+    networks:
+      - notification-data
+      - messaging
+
   # Gateway
   gateway:
     build:
