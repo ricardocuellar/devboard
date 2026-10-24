@@ -104,3 +104,51 @@ func parseEventUUID(value, field string) (pgtype.UUID, error) {
 
 	return id, nil
 }
+
+func (r *NotificationRepository) ListByUser(
+	ctx context.Context,
+	userID string,
+	limit int32,
+) ([]*domain.Notification, error) {
+	var pgUserID pgtype.UUID
+
+	if err := pgUserID.Scan(userID); err != nil || !pgUserID.Valid {
+		return nil, fmt.Errorf(
+			"user_id inválido: %w",
+			domain.ErrInvalidInput,
+		)
+	}
+
+	rows, err := r.queries.ListNotificationsByUser(
+		ctx,
+		generated.ListNotificationsByUserParams{
+			UserID:      pgUserID,
+			ResultLimit: limit,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"consultando notificaciones en PostgreSQL: %w",
+			err,
+		)
+	}
+
+	notifications := make([]*domain.Notification, 0, len(rows))
+
+	for _, row := range rows {
+		notifications = append(
+			notifications,
+			&domain.Notification{
+				ID:        row.ID.String(),
+				EventID:   row.EventID,
+				UserID:    row.UserID.String(),
+				TaskID:    row.TaskID.String(),
+				ProjectID: row.ProjectID.String(),
+				Message:   row.Message,
+				CreatedAt: row.CreatedAt.Time,
+			},
+		)
+	}
+
+	return notifications, nil
+}
