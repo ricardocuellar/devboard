@@ -24,16 +24,25 @@ RUN CGO_ENABLED=0 \
     -o /out/consumer \
     ./cmd/consumer
 
+RUN CGO_ENABLED=0 \
+    GOOS=linux \
+    go build \
+    -trimpath \
+    -ldflags="-s -w" \
+    -o /out/api \
+    ./cmd/api
+
 
 FROM alpine:3.24
 
-RUN apk add --no-cache ca-certificates \
+RUN apk add --no-cache ca-certificates curl \
     && addgroup -S app \
     && adduser -S app -G app
 
 WORKDIR /app
 
 COPY --from=builder /out/consumer /app/consumer
+COPY --from=builder /out/api /app/api
 
 USER app
 
