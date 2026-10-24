@@ -3,6 +3,7 @@ module github.com/ricardocuellar/devboard/services/notification
 go 1.26.4
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/nats-io/nats.go v1.54.0
 	github.com/ricardocuellar/devboard/contracts v0.0.0
